@@ -51,5 +51,29 @@ export const calculators: Calculator[] = [
     icon: 'TrendingUp',
     path: '/salary-negotiation',
     keywords: ['negotiation', 'counteroffer', 'raise']
+  },
+  {
+    id: 'retirement-calculator',
+    name: 'Retirement Savings Calculator',
+    description: 'Project your retirement savings and see how your money can grow over time.',
+    icon: 'Landmark',
+    path: '/retirement-calculator',
+    keywords: ['retirement', 'savings', '401k', 'investment']
+  },
+  {
+    id: 'loan-calculator',
+    name: 'Loan Calculator',
+    description: 'Calculate your monthly loan payment and see a full amortization schedule.',
+    icon: 'Banknote',
+    path: '/loan-calculator',
+    keywords: ['loan', 'mortgage', 'car loan', 'amortization']
+  },
+  {
+    id: 'investment-calculator',
+    name: 'Investment Calculator',
+    description: 'See how your investments can grow over time with compound interest.',
+    icon: 'LineChart',
+    path: '/investment-calculator',
+    keywords: ['investment', 'compound interest', 'stocks', 'returns']
   }
 ];

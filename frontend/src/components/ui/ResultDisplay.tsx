@@ -3,7 +3,7 @@ import React from 'react';
 interface ResultDisplayProps {
   label: string;
   value: string | number;
-  size?: 'small' | 'large';
+  size?: 'small' | 'medium' | 'large';
   variant?: 'default' | 'positive' | 'negative';
   context?: string;
 }
@@ -17,6 +17,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
 }) => {
   const sizeStyles = {
     small: 'text-2xl',
+    medium: 'text-3xl',
     large: 'text-5xl'
   };
 

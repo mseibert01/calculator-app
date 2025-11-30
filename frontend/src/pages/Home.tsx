@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Shield, Zap, Lock } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { CalculatorCard } from '../components/calculators/CalculatorCard';
+import AdPlaceholder from '../components/ui/AdPlaceholder';
 import { calculators } from '../data/calculators';
 
 export const Home: React.FC = () => {
@@ -76,12 +77,30 @@ export const Home: React.FC = () => {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {calculators.map((calculator) => (
+            {calculators.slice(0, 3).map((calculator) => (
+              <CalculatorCard key={calculator.id} calculator={calculator} />
+            ))}
+          </div>
+
+          <div className="my-6">
+            <AdPlaceholder />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {calculators.slice(3).map((calculator) => (
               <CalculatorCard key={calculator.id} calculator={calculator} />
             ))}
           </div>
         </div>
       </section>
+
+      {/* Ad Section */}
+      <section className="py-8 px-4">
+        <div className="container mx-auto">
+          <AdPlaceholder />
+        </div>
+      </section>
+
 
       {/* CTA Section */}
       <section className="py-16 px-4 bg-primary-50 dark:bg-primary-900/10">

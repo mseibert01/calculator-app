@@ -7,6 +7,7 @@ import { Input } from '../ui/Input';
 import { ResultDisplay } from '../ui/ResultDisplay';
 import { CalculatorLayout } from './CalculatorLayout';
 import { calculateHourlyToSalary } from '../../lib/calculations';
+import { useSharedData } from '../../context/SharedDataContext';
 import { formatCurrency, formatNumber } from '../../lib/utils';
 
 const schema = z.object({
@@ -19,16 +20,17 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export const HourlyToSalary: React.FC = () => {
+  const { sharedData, setSharedData } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateHourlyToSalary> | null>(null);
 
   const {
     register,
     watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      hourlyRate: 25,
+      hourlyRate: sharedData.hourlyRate || 25,
       hoursPerWeek: 40,
       weeksPerYear: 52,
       paidTimeOff: 2,
@@ -42,10 +44,11 @@ export const HourlyToSalary: React.FC = () => {
     try {
       const result = calculateHourlyToSalary(formValues);
       setResults(result);
+      setSharedData({ annualSalary: result.annualSalary, hourlyRate: formValues.hourlyRate });
     } catch (error) {
       setResults(null);
     }
-  }, [formValues]);
+  }, [formValues, setSharedData]);
 
   return (
     <CalculatorLayout
