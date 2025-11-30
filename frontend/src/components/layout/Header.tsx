@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calculator, Moon, Sun, Menu, X } from 'lucide-react';
-import { Button } from '../ui/Button';
 
 export const Header: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
