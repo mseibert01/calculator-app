@@ -11,6 +11,13 @@ import { RetirementCalculator } from './components/calculators/RetirementCalcula
 import { LoanCalculator } from './components/calculators/LoanCalculator';
 import { InvestmentCalculator } from './components/calculators/InvestmentCalculator';
 import { InterestCalculator } from './components/calculators/InterestCalculator';
+import { BudgetCalculator } from './components/calculators/BudgetCalculator';
+import { MortgageCalculator } from './components/calculators/MortgageCalculator';
+import { SavingsGoalCalculator } from './components/calculators/SavingsGoalCalculator';
+import { NetWorthCalculator } from './components/calculators/NetWorthCalculator';
+import { FourZeroOneKCalculator } from './components/calculators/FourZeroOneKCalculator';
+import { DebtPayoffCalculator } from './components/calculators/DebtPayoffCalculator';
+import { TaxCalculator } from './components/calculators/TaxCalculator';
 
 const App: React.FC = () => {
   return (
@@ -27,6 +34,13 @@ const App: React.FC = () => {
             <Route path="/loan-calculator" element={<LoanCalculator />} />
             <Route path="/investment-calculator" element={<InvestmentCalculator />} />
             <Route path="/interest-calculator" element={<InterestCalculator />} />
+            <Route path="/budget-calculator" element={<BudgetCalculator />} />
+            <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
+            <Route path="/savings-goal-calculator" element={<SavingsGoalCalculator />} />
+            <Route path="/net-worth-calculator" element={<NetWorthCalculator />} />
+            <Route path="/401k-calculator" element={<FourZeroOneKCalculator />} />
+            <Route path="/debt-payoff-calculator" element={<DebtPayoffCalculator />} />
+            <Route path="/tax-calculator" element={<TaxCalculator />} />
             <Route path="/freelance-rate" element={<TakeHomePay />} />
             <Route path="/salary-negotiation" element={<TakeHomePay />} />
             <Route path="/privacy" element={<About />} />

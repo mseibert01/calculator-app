@@ -84,5 +84,63 @@ export const calculators: Calculator[] = [
     path: '/interest-calculator',
     popular: true,
     keywords: ['interest', 'compound interest', 'simple interest', 'APY', 'savings']
+  },
+  {
+    id: 'budget-calculator',
+    name: 'Budget Calculator',
+    description: 'Plan your spending with the 50/30/20 budgeting rule or create a custom budget.',
+    icon: 'Wallet',
+    path: '/budget-calculator',
+    popular: true,
+    keywords: ['budget', '50/30/20', 'spending', 'personal finance', 'budgeting']
+  },
+  {
+    id: 'mortgage-calculator',
+    name: 'Mortgage Calculator',
+    description: 'Calculate your monthly mortgage payment and see the total cost of homeownership.',
+    icon: 'Home',
+    path: '/mortgage-calculator',
+    popular: true,
+    keywords: ['mortgage', 'home loan', 'housing', 'property', 'PMI', 'home buying']
+  },
+  {
+    id: 'savings-goal-calculator',
+    name: 'Savings Goal Calculator',
+    description: 'Calculate how long it will take to reach your savings goal and how much to save monthly.',
+    icon: 'Target',
+    path: '/savings-goal-calculator',
+    keywords: ['savings', 'goal', 'target', 'financial goals', 'compound interest']
+  },
+  {
+    id: 'net-worth-calculator',
+    name: 'Net Worth Calculator',
+    description: 'Calculate your total net worth by adding up assets and subtracting liabilities.',
+    icon: 'TrendingUp',
+    path: '/net-worth-calculator',
+    keywords: ['net worth', 'assets', 'liabilities', 'wealth', 'financial snapshot']
+  },
+  {
+    id: '401k-calculator',
+    name: '401k/IRA Calculator',
+    description: 'Optimize your retirement account contributions and see how employer matching impacts savings.',
+    icon: 'PiggyBank',
+    path: '/401k-calculator',
+    keywords: ['401k', 'IRA', 'retirement', 'employer match', '403b', 'retirement account']
+  },
+  {
+    id: 'debt-payoff-calculator',
+    name: 'Debt Payoff Calculator',
+    description: 'Compare avalanche vs snowball strategies and see how to become debt-free faster.',
+    icon: 'CreditCard',
+    path: '/debt-payoff-calculator',
+    keywords: ['debt', 'payoff', 'avalanche', 'snowball', 'debt free', 'credit card']
+  },
+  {
+    id: 'tax-calculator',
+    name: 'Tax Calculator',
+    description: 'Estimate your federal and state income taxes for 2025 with accurate tax brackets.',
+    icon: 'Receipt',
+    path: '/tax-calculator',
+    keywords: ['tax', 'income tax', 'federal tax', 'state tax', 'tax brackets', 'FICA']
   }
 ];
