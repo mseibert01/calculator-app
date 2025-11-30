@@ -1,15 +1,61 @@
 // src/context/SharedDataContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface SharedData {
-  annualSalary?: number;
+export interface FinancialProfile {
+  // Income
   hourlyRate?: number;
-  // Add other shared fields here
+  annualSalary?: number;
+  grossIncome?: number;
+  netIncome?: number;
+  payFrequency?: 'annually' | 'monthly' | 'biweekly' | 'weekly';
+
+  // Location & Cost of Living
+  currentCity?: string;
+  newCity?: string;
+  costOfLivingAdjustment?: number;
+
+  // Tax Information
+  filingStatus?: 'single' | 'married';
+  state?: string;
+  effectiveTaxRate?: number;
+
+  // Retirement
+  currentAge?: number;
+  retirementAge?: number;
+  currentRetirementSavings?: number;
+  monthlyRetirementContribution?: number;
+  retirementGoal?: number;
+
+  // Housing
+  monthlyRent?: number;
+  homePrice?: number;
+  downPayment?: number;
+  mortgageRate?: number;
+  monthlyMortgagePayment?: number;
+
+  // Investments
+  currentInvestments?: number;
+  monthlyInvestment?: number;
+  expectedReturnRate?: number;
+
+  // Debts
+  totalDebt?: number;
+  monthlyDebtPayment?: number;
+
+  // Goals
+  savingsGoal?: number;
+  savingsTimeframe?: number;
+  emergencyFundGoal?: number;
 }
+
+// Legacy support
+interface SharedData extends FinancialProfile {}
 
 interface SharedDataContextType {
   sharedData: SharedData;
-  setSharedData: (data: SharedData) => void;
+  setSharedData: (data: Partial<SharedData>) => void;
+  clearSharedData: () => void;
+  financialProfile: FinancialProfile;
 }
 
 const SharedDataContext = createContext<SharedDataContextType | undefined>(undefined);
@@ -25,8 +71,17 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   });
 
-  const setSharedData = (data: SharedData) => {
+  const setSharedData = (data: Partial<SharedData>) => {
     setSharedDataState(prevData => ({ ...prevData, ...data }));
+  };
+
+  const clearSharedData = () => {
+    setSharedDataState({});
+    try {
+      window.localStorage.removeItem('sharedCalculatorData');
+    } catch (error) {
+      console.error('Error clearing localStorage', error);
+    }
   };
 
   useEffect(() => {
@@ -38,7 +93,12 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
   }, [sharedData]);
 
   return (
-    <SharedDataContext.Provider value={{ sharedData, setSharedData }}>
+    <SharedDataContext.Provider value={{
+      sharedData,
+      setSharedData,
+      clearSharedData,
+      financialProfile: sharedData
+    }}>
       {children}
     </SharedDataContext.Provider>
   );

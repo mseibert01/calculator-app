@@ -91,9 +91,9 @@ export const InvestmentCalculator: React.FC = () => {
                     <YAxis tickFormatter={(tick) => `$${(tick / 1000)}k`} />
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
                     <Legend />
-                    <Area type="monotone" dataKey="totalInterest" stackId="1" name="Interest" stroke="#82ca9d" fill="#82ca9d" />
-                    <Area type="monotone" dataKey="totalContributions" stackId="1" name="Contributions" stroke="#8884d8" fill="#8884d8" />
-                    <Area type="monotone" dataKey="initialInvestment" stackId="1" name="Initial" stroke="#ffc658" fill="#ffc658" />
+                    <Area type="monotone" dataKey="initialInvestment" stackId="1" name="Initial Investment" stroke="#ffc658" fill="#ffc658" />
+                    <Area type="monotone" dataKey="totalContributions" stackId="1" name="Total Contributions" stroke="#8884d8" fill="#8884d8" />
+                    <Area type="monotone" dataKey="totalInterest" stackId="1" name="Total Interest" stroke="#82ca9d" fill="#82ca9d" />
                 </AreaChart>
             </ResponsiveContainer>
         </Card>
