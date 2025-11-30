@@ -2281,3 +2281,157 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 };
 
 
+
+export interface InterestCalculatorInput {
+  initialInvestment: number;
+  annualContribution: number;
+  monthlyContribution: number;
+  interestRate: number;
+  years: number;
+  compoundingFrequency: 'annually' | 'semiannually' | 'quarterly' | 'monthly' | 'semimonthly' | 'biweekly' | 'weekly' | 'daily' | 'continuously';
+  contributionTiming: 'beginning' | 'end';
+  taxRate: number;
+  inflationRate: number;
+}
+
+export interface YearlyScheduleRow {
+  year: number;
+  principal: number;
+  contributions: number;
+  interest: number;
+  balance: number;
+}
+
+export interface InterestCalculatorResult {
+  endingBalance: number;
+  totalPrincipal: number;
+  totalContributions: number;
+  totalInterest: number;
+  afterTaxBalance: number;
+  inflationAdjustedBalance: number;
+  yearlySchedule: YearlyScheduleRow[];
+}
+
+const getCompoundingPeriodsPerYear = (frequency: InterestCalculatorInput['compoundingFrequency']): number => {
+  const frequencies = {
+    'annually': 1,
+    'semiannually': 2,
+    'quarterly': 4,
+    'monthly': 12,
+    'semimonthly': 24,
+    'biweekly': 26,
+    'weekly': 52,
+    'daily': 365,
+    'continuously': Infinity
+  };
+  return frequencies[frequency];
+};
+
+export const calculateInterest = (input: InterestCalculatorInput): InterestCalculatorResult => {
+  const {
+    initialInvestment,
+    annualContribution,
+    monthlyContribution,
+    interestRate,
+    years,
+    compoundingFrequency,
+    contributionTiming,
+    taxRate,
+    inflationRate
+  } = input;
+
+  const periodsPerYear = getCompoundingPeriodsPerYear(compoundingFrequency);
+  const rateDecimal = interestRate / 100;
+  const inflationDecimal = inflationRate / 100;
+  const totalMonthlyContributions = monthlyContribution * 12;
+  const totalYearlyContribution = annualContribution + totalMonthlyContributions;
+
+  const yearlySchedule: YearlyScheduleRow[] = [];
+
+  let balance = initialInvestment;
+  let totalContributionsAccumulated = 0;
+  let totalInterestAccumulated = 0;
+
+  for (let year = 0; year <= years; year++) {
+
+    if (year > 0) {
+      // Add contributions for this year
+      if (contributionTiming === 'beginning') {
+        balance += totalYearlyContribution;
+        totalContributionsAccumulated += totalYearlyContribution;
+      }
+
+      // Calculate interest for the year
+      if (compoundingFrequency === 'continuously') {
+        // Continuous compounding: A = Pe^(rt)
+        const growthFactor = Math.exp(rateDecimal);
+        const interestEarned = balance * (growthFactor - 1);
+        balance *= growthFactor;
+        totalInterestAccumulated += interestEarned;
+      } else {
+        // Regular compounding
+        const periodRate = rateDecimal / periodsPerYear;
+        const periodsInYear = periodsPerYear;
+
+        for (let period = 0; period < periodsInYear; period++) {
+          const periodInterest = balance * periodRate;
+          balance += periodInterest;
+          totalInterestAccumulated += periodInterest;
+
+          // Add periodic contributions if monthly contributions exist
+          if (monthlyContribution > 0) {
+            const periodsPerMonth = periodsPerYear / 12;
+            if ((period + 1) % periodsPerMonth === 0) {
+              if (contributionTiming === 'end') {
+                balance += monthlyContribution;
+                totalContributionsAccumulated += monthlyContribution;
+              }
+            }
+          }
+        }
+
+        // Add annual contribution at end if applicable
+        if (annualContribution > 0 && contributionTiming === 'end') {
+          balance += annualContribution;
+          totalContributionsAccumulated += annualContribution;
+        }
+      }
+
+      if (contributionTiming === 'end' && compoundingFrequency === 'continuously') {
+        balance += totalYearlyContribution;
+        totalContributionsAccumulated += totalYearlyContribution;
+      }
+    }
+
+
+    yearlySchedule.push({
+      year,
+      principal: initialInvestment,
+      contributions: totalContributionsAccumulated,
+      interest: totalInterestAccumulated,
+      balance
+    });
+  }
+
+  const endingBalance = balance;
+  const totalPrincipal = initialInvestment;
+  const totalContributions = totalContributionsAccumulated;
+  const totalInterest = totalInterestAccumulated;
+
+  // Calculate after-tax balance
+  const taxOnInterest = totalInterest * (taxRate / 100);
+  const afterTaxBalance = endingBalance - taxOnInterest;
+
+  // Calculate inflation-adjusted balance (purchasing power in today's dollars)
+  const inflationAdjustedBalance = endingBalance / Math.pow(1 + inflationDecimal, years);
+
+  return {
+    endingBalance,
+    totalPrincipal,
+    totalContributions,
+    totalInterest,
+    afterTaxBalance,
+    inflationAdjustedBalance,
+    yearlySchedule
+  };
+};

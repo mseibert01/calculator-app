@@ -75,5 +75,14 @@ export const calculators: Calculator[] = [
     icon: 'LineChart',
     path: '/investment-calculator',
     keywords: ['investment', 'compound interest', 'stocks', 'returns']
+  },
+  {
+    id: 'interest-calculator',
+    name: 'Interest Calculator',
+    description: 'Calculate compound interest with flexible compounding frequencies and contribution options.',
+    icon: 'Calculator',
+    path: '/interest-calculator',
+    popular: true,
+    keywords: ['interest', 'compound interest', 'simple interest', 'APY', 'savings']
   }
 ];

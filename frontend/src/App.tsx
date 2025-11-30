@@ -10,6 +10,7 @@ import { CostOfLiving } from './components/calculators/CostOfLiving';
 import { RetirementCalculator } from './components/calculators/RetirementCalculator';
 import { LoanCalculator } from './components/calculators/LoanCalculator';
 import { InvestmentCalculator } from './components/calculators/InvestmentCalculator';
+import { InterestCalculator } from './components/calculators/InterestCalculator';
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
             <Route path="/retirement-calculator" element={<RetirementCalculator />} />
             <Route path="/loan-calculator" element={<LoanCalculator />} />
             <Route path="/investment-calculator" element={<InvestmentCalculator />} />
+            <Route path="/interest-calculator" element={<InterestCalculator />} />
             <Route path="/freelance-rate" element={<TakeHomePay />} />
             <Route path="/salary-negotiation" element={<TakeHomePay />} />
             <Route path="/privacy" element={<About />} />
