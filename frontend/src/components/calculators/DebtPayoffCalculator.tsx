@@ -51,6 +51,7 @@ export const DebtPayoffCalculator: React.FC = () => {
   const {
     register,
     watch,
+    reset,
     formState: { errors }
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -63,6 +64,12 @@ export const DebtPayoffCalculator: React.FC = () => {
   });
 
   const formValues = watch();
+
+  useEffect(() => {
+    if (sharedData.debts && sharedData.debts.length > 0) {
+      reset({ ...formValues, debts: sharedData.debts });
+    }
+  }, [sharedData.debts, reset]);
 
   useEffect(() => {
     try {

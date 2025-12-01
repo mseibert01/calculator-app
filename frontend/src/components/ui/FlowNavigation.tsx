@@ -27,6 +27,16 @@ const FLOW_STEP_INFO: Record<FlowStep, { title: string; path: string; nextStep: 
   'net-worth': {
     title: 'Net Worth',
     path: '/net-worth-calculator',
+    nextStep: 'goals'
+  },
+  'goals': {
+    title: 'Goals',
+    path: '/goals-calculator',
+    nextStep: 'retirement'
+  },
+  'retirement': {
+    title: 'Retirement',
+    path: '/retirement-planner',
     nextStep: null
   }
 };

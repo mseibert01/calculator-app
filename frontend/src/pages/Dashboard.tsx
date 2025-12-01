@@ -18,6 +18,8 @@ import {
   Circle,
   AlertCircle,
   Zap,
+  Target,
+  Briefcase,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -66,11 +68,31 @@ export const Dashboard: React.FC = () => {
       data: financialProfile.netWorth !== undefined
         ? formatCurrency(financialProfile.netWorth)
         : 'Not set'
+    },
+    {
+      id: 'goals',
+      title: 'Goals',
+      path: '/goals-calculator',
+      icon: <Target className="w-5 h-5" />,
+      completed: flowProgress.completedSteps.includes('goals' as any),
+      data: financialProfile.goals
+        ? `${financialProfile.goals.length} goals set`
+        : 'Not set'
+    },
+    {
+      id: 'retirement',
+      title: 'Retirement',
+      path: '/retirement-planner',
+      icon: <Briefcase className="w-5 h-5" />,
+      completed: flowProgress.completedSteps.includes('retirement' as any),
+      data: financialProfile.retirementAge
+        ? `Age ${financialProfile.retirementAge}`
+        : 'Not set'
     }
   ];
 
   const completedCount = flowProgress.completedSteps.length;
-  const progressPercent = (completedCount / 4) * 100;
+  const progressPercent = (completedCount / 6) * 100;
 
   const getPriorityClass = (priority: 'high' | 'medium' | 'low') => {
     switch (priority) {

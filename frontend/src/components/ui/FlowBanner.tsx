@@ -25,6 +25,16 @@ const FLOW_STEP_INFO: Record<FlowStep, { title: string; path: string; descriptio
     title: 'Calculate Net Worth',
     path: '/net-worth-calculator',
     description: 'Get a complete picture of your finances'
+  },
+  'goals': {
+    title: 'Set Financial Goals',
+    path: '/goals-calculator',
+    description: 'Define and track your financial goals'
+  },
+  'retirement': {
+    title: 'Plan for Retirement',
+    path: '/retirement-planner',
+    description: 'Project your retirement savings'
   }
 };
 

@@ -31,7 +31,7 @@ export const NetWorthCalculator: React.FC = () => {
   const { financialProfile, setSharedData, markStepComplete } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateNetWorth> | null>(null);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
-  const { register, watch, formState: { errors } } = useForm<FormData>({
+  const { register, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       cashAndSavings: financialProfile.assets?.find(a => a.name === 'Cash & Savings')?.value ?? 25000,
@@ -50,6 +50,12 @@ export const NetWorthCalculator: React.FC = () => {
   });
 
   const formValues = watch();
+
+  useEffect(() => {
+    if (financialProfile) {
+      reset(formValues);
+    }
+  }, [financialProfile, reset]);
 
   useEffect(() => {
     try {

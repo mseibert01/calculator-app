@@ -9,6 +9,13 @@ export interface BudgetCategory {
   type: 'need' | 'want' | 'savings';
 }
 
+export interface Goal {
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string;
+}
+
 export interface FinancialProfile {
   // Income
   hourlyRate?: number;
@@ -60,6 +67,7 @@ export interface FinancialProfile {
   savingsGoal?: number;
   savingsTimeframe?: number;
   emergencyFundGoal?: number;
+  goals?: Goal[];
 
   // Assets (for net worth)
   assets?: Array<{
@@ -80,7 +88,7 @@ export interface FinancialProfile {
 }
 
 
-export type FlowStep = 'take-home-pay' | 'budget' | 'debt-payoff' | 'net-worth';
+export type FlowStep = 'take-home-pay' | 'budget' | 'debt-payoff' | 'net-worth' | 'goals' | 'retirement';
 
 export interface FlowProgress {
   completedSteps: FlowStep[];
@@ -106,7 +114,7 @@ interface SharedDataContextType {
 
 const SharedDataContext = createContext<SharedDataContextType | undefined>(undefined);
 
-const FLOW_STEPS: FlowStep[] = ['take-home-pay', 'budget', 'debt-payoff', 'net-worth'];
+const FLOW_STEPS: FlowStep[] = ['take-home-pay', 'budget', 'debt-payoff', 'net-worth', 'goals', 'retirement'];
 
 export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [sharedData, setSharedDataState] = useState<SharedData>(() => {
@@ -145,6 +153,18 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
   const markStepComplete = (step: FlowStep) => {
     setFlowProgress(prev => {
       if (prev.completedSteps.includes(step)) return prev;
+
+      // Track usage
+      fetch('/api/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          calculatorName: step,
+        }),
+      }).catch(err => console.error('Failed to track usage:', err));
+
       return {
         ...prev,
         completedSteps: [...prev.completedSteps, step],

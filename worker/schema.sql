@@ -7,3 +7,10 @@ CREATE TABLE IF NOT EXISTS subscribers (
 
 CREATE INDEX IF NOT EXISTS idx_email ON subscribers(email);
 CREATE INDEX IF NOT EXISTS idx_created_at ON subscribers(created_at);
+
+CREATE TABLE IF NOT EXISTS usage_stats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  calculator_name TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  financial_health_score REAL
+);

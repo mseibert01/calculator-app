@@ -19,6 +19,10 @@ import { NetWorthCalculator } from './components/calculators/NetWorthCalculator'
 import { FourZeroOneKCalculator } from './components/calculators/FourZeroOneKCalculator';
 import { DebtPayoffCalculator } from './components/calculators/DebtPayoffCalculator';
 import { TaxCalculator } from './components/calculators/TaxCalculator';
+import { GoalsCalculator } from './components/calculators/GoalsCalculator';
+import { RetirementPlanner } from './components/calculators/RetirementPlanner';
+import { AdminLogin } from './pages/AdminLogin';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 const App: React.FC = () => {
   return (
@@ -43,6 +47,10 @@ const App: React.FC = () => {
             <Route path="/401k-calculator" element={<FourZeroOneKCalculator />} />
             <Route path="/debt-payoff-calculator" element={<DebtPayoffCalculator />} />
             <Route path="/tax-calculator" element={<TaxCalculator />} />
+            <Route path="/goals-calculator" element={<GoalsCalculator />} />
+            <Route path="/retirement-planner" element={<RetirementPlanner />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/freelance-rate" element={<TakeHomePay />} />
             <Route path="/salary-negotiation" element={<TakeHomePay />} />
             <Route path="/privacy" element={<About />} />

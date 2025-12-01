@@ -42,6 +42,32 @@ export default {
       }
     }
 
+    if (url.pathname === '/api/track' && request.method === 'POST') {
+      try {
+        const { calculatorName, financialHealthScore } = await request.json() as { calculatorName: string; financialHealthScore?: number };
+
+        if (!calculatorName) {
+          return new Response(JSON.stringify({ error: 'calculatorName is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO usage_stats (calculator_name, timestamp, financial_health_score) VALUES (?, ?, ?)'
+        ).bind(calculatorName, new Date().toISOString(), financialHealthScore).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: 'Failed to track usage' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     if (url.pathname === '/api/health') {
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

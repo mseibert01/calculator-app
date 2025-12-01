@@ -119,6 +119,17 @@ export const BudgetCalculator: React.FC = () => {
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const [dataSaved, setDataSaved] = useState(false);
 
+  useEffect(() => {
+    if (financialProfile.monthlyDebtPayment) {
+      const debtCategory = categories.find(c => c.name === 'Debt Payment');
+      if (debtCategory) {
+        updateCategory(debtCategory.id, 'amount', financialProfile.monthlyDebtPayment);
+      } else {
+        addCategory('savings', 'Debt Payment', financialProfile.monthlyDebtPayment);
+      }
+    }
+  }, []);
+
   const totalNeeds = categories.filter(c => c.type === 'need').reduce((sum, c) => sum + c.amount, 0);
   const totalWants = categories.filter(c => c.type === 'want').reduce((sum, c) => sum + c.amount, 0);
   const totalSavings = categories.filter(c => c.type === 'savings').reduce((sum, c) => sum + c.amount, 0);
@@ -162,14 +173,14 @@ export const BudgetCalculator: React.FC = () => {
     }
   }, [monthlyIncome, categories, totalNeeds, totalWants, totalSavings, totalSpent, setSharedData, markStepComplete, hasMarkedComplete]);
 
-  const addCategory = (type: 'need' | 'want' | 'savings') => {
+  const addCategory = (type: 'need' | 'want' | 'savings', name = 'New Category', amount = 0) => {
     const newCategory: BudgetCategory = {
       id: Date.now().toString(),
-      name: 'New Category',
-      amount: 0,
+      name,
+      amount,
       type
     };
-    setCategories([...categories, newCategory]);
+    setCategories(prev => [...prev, newCategory]);
   };
 
   const updateCategory = (id: string, field: 'name' | 'amount', value: string | number) => {
