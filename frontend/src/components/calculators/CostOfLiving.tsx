@@ -18,6 +18,7 @@ const schema = z.object({
   currentCity: z.string(),
   newCity: z.string(),
   currentSalary: z.number().min(1, 'Salary must be greater than 0'),
+  filingStatus: z.enum(['single', 'married']),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -36,6 +37,7 @@ export const CostOfLiving: React.FC = () => {
       currentCity: 'Chicago, IL',
       newCity: 'San Francisco, CA',
       currentSalary: sharedData.annualSalary || 60000,
+      filingStatus: sharedData.filingStatus || 'single',
     },
     mode: 'onChange'
   });
@@ -46,7 +48,10 @@ export const CostOfLiving: React.FC = () => {
     try {
       const result = calculateCostOfLivingDifference(formValues);
       setResults(result);
-      setSharedData({ annualSalary: formValues.currentSalary });
+      setSharedData({
+        annualSalary: formValues.currentSalary,
+        filingStatus: formValues.filingStatus,
+      });
     } catch (error) {
       setResults(null);
     }
@@ -78,6 +83,14 @@ export const CostOfLiving: React.FC = () => {
               {...register('currentSalary', { valueAsNumber: true })}
               error={errors.currentSalary?.message}
             />
+            <Select
+              label="Filing Status"
+              {...register('filingStatus')}
+              options={[
+                { value: 'single', label: 'Single' },
+                { value: 'married', label: 'Married Filing Jointly' },
+              ]}
+            />
           </div>
         </Card>
 
@@ -98,6 +111,27 @@ export const CostOfLiving: React.FC = () => {
                   </span>{' '}
                   in {formValues.newCity}.
                 </p>
+                <div className="pt-4 border-t dark:border-gray-700">
+                    <h3 className="text-lg font-bold mb-2 text-center">Take-Home Pay Comparison</h3>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="font-bold"></div>
+                        <div className="font-bold">
+                           <span>{formValues.currentCity}</span>
+                        </div>
+                        <div className="font-bold">
+                           <span>{formValues.newCity}</span>
+                        </div>
+                        <div>
+                            <span>Net Pay</span>
+                        </div>
+                        <div>
+                            <span>{formatCurrency(results.currentTakeHomePay.netPay)}</span>
+                        </div>
+                        <div>
+                            <span>{formatCurrency(results.newTakeHomePay.netPay)}</span>
+                        </div>
+                    </div>
+                </div>
                 <div className="pt-4 border-t dark:border-gray-700">
                     <h3 className="text-lg font-bold mb-2 text-center">Cost Index Comparison</h3>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

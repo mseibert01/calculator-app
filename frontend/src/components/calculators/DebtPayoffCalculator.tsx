@@ -10,6 +10,8 @@ import { Table } from '../ui/Table';
 import { CalculatorLayout } from './CalculatorLayout';
 import { calculateDebtPayoff } from '../../lib/calculations';
 import { formatCurrency } from '../../lib/utils';
+import { useSharedData } from '../../context/SharedDataContext';
+import { FlowNavigation } from '../ui/FlowNavigation';
 
 const debtSchema = z.object({
   name: z.string(),
@@ -28,13 +30,23 @@ type FormData = z.infer<typeof schema>;
 type DebtInput = z.infer<typeof debtSchema>;
 
 export const DebtPayoffCalculator: React.FC = () => {
+  const { sharedData, setSharedData, markStepComplete } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateDebtPayoff> | null>(null);
-  const [debts, setDebts] = useState<DebtInput[]>([
-    { name: 'Credit Card 1', balance: 5000, interestRate: 18.5, minimumPayment: 150 },
-    { name: 'Credit Card 2', balance: 3000, interestRate: 22.9, minimumPayment: 90 },
-    { name: 'Car Loan', balance: 15000, interestRate: 5.5, minimumPayment: 350 },
-    { name: 'Student Loan', balance: 25000, interestRate: 6.8, minimumPayment: 280 },
-  ]);
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+  const [dataSaved, setDataSaved] = useState(false);
+
+  // Load saved debts or use defaults
+  const [debts, setDebts] = useState<DebtInput[]>(() => {
+    if (sharedData.debts && sharedData.debts.length > 0) {
+      return sharedData.debts;
+    }
+    return [
+      { name: 'Credit Card 1', balance: 5000, interestRate: 18.5, minimumPayment: 150 },
+      { name: 'Credit Card 2', balance: 3000, interestRate: 22.9, minimumPayment: 90 },
+      { name: 'Car Loan', balance: 15000, interestRate: 5.5, minimumPayment: 350 },
+      { name: 'Student Loan', balance: 25000, interestRate: 6.8, minimumPayment: 280 },
+    ];
+  });
 
   const {
     register,
@@ -61,18 +73,51 @@ export const DebtPayoffCalculator: React.FC = () => {
     try {
       const result = calculateDebtPayoff(formValues);
       setResults(result);
+
+      // Save debt data
+      const totalDebt = formValues.debts.reduce((sum, debt) => sum + debt.balance, 0);
+      const totalMinimum = formValues.debts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+      setSharedData({
+        debts: formValues.debts,
+        totalDebt,
+        monthlyDebtPayment: totalMinimum + formValues.extraPayment
+      });
+
+      // Show saved indicator
+      setDataSaved(true);
+      const timer = setTimeout(() => setDataSaved(false), 2000);
+
+      // Mark step as complete after user has entered debt information
+      if (!hasMarkedComplete && totalDebt > 0) {
+        markStepComplete('debt-payoff');
+        setHasMarkedComplete(true);
+      }
+
+      return () => clearTimeout(timer);
     } catch (error) {
       setResults(null);
     }
-  }, [formValues]);
+  }, [formValues, setSharedData, markStepComplete, hasMarkedComplete]);
 
   const addDebt = () => {
-    setDebts([...debts, { name: `Debt ${debts.length + 1}`, balance: 0, interestRate: 0, minimumPayment: 0 }]);
+    const newDebts = [...debts, { name: `Debt ${debts.length + 1}`, balance: 0, interestRate: 0, minimumPayment: 0 }];
+    setDebts(newDebts);
+    // Save immediately
+    setSharedData({ debts: newDebts });
   };
 
   const removeDebt = (index: number) => {
     if (debts.length > 1) {
-      setDebts(debts.filter((_, i) => i !== index));
+      const newDebts = debts.filter((_, i) => i !== index);
+      setDebts(newDebts);
+      // Save immediately
+      const totalDebt = newDebts.reduce((sum, debt) => sum + debt.balance, 0);
+      const totalMinimum = newDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+      setSharedData({
+        debts: newDebts,
+        totalDebt,
+        monthlyDebtPayment: totalMinimum + (formValues.extraPayment || 0)
+      });
     }
   };
 
@@ -80,6 +125,17 @@ export const DebtPayoffCalculator: React.FC = () => {
     const newDebts = [...debts];
     newDebts[index] = { ...newDebts[index], [field]: value };
     setDebts(newDebts);
+
+    // Immediately save to shared data when debts change
+    const totalDebt = newDebts.reduce((sum, debt) => sum + debt.balance, 0);
+    const totalMinimum = newDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+    setSharedData({
+      debts: newDebts,
+      totalDebt,
+      monthlyDebtPayment: totalMinimum + (formValues.extraPayment || 0)
+    });
+    setDataSaved(true);
+    setTimeout(() => setDataSaved(false), 2000);
   };
 
   return (
@@ -91,7 +147,14 @@ export const DebtPayoffCalculator: React.FC = () => {
         <div className="space-y-6">
           <Card>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Your Debts</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold">Your Debts</h2>
+                {dataSaved && (
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2 py-1 bg-green-50 dark:bg-green-900/30 rounded-full">
+                    ✓ Saved
+                  </span>
+                )}
+              </div>
               <button
                 onClick={addDebt}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -257,6 +320,7 @@ export const DebtPayoffCalculator: React.FC = () => {
           </Card>
         </div>
       </div>
+      <FlowNavigation currentStep="debt-payoff" />
     </CalculatorLayout>
   );
 };

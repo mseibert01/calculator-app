@@ -8,6 +8,8 @@ import { ResultDisplay } from '../ui/ResultDisplay';
 import { CalculatorLayout } from './CalculatorLayout';
 import { calculateNetWorth } from '../../lib/calculations';
 import { formatCurrency } from '../../lib/utils';
+import { useSharedData } from '../../context/SharedDataContext';
+import { FlowNavigation } from '../ui/FlowNavigation';
 
 const schema = z.object({
   cashAndSavings: z.number().min(0),
@@ -26,7 +28,9 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export const NetWorthCalculator: React.FC = () => {
+  const { setSharedData, markStepComplete } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateNetWorth> | null>(null);
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const { register, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -49,11 +53,24 @@ export const NetWorthCalculator: React.FC = () => {
 
   useEffect(() => {
     try {
-      setResults(calculateNetWorth(formValues));
+      const result = calculateNetWorth(formValues);
+      setResults(result);
+
+      // Save net worth data
+      setSharedData({
+        totalAssets: result.totalAssets,
+        netWorth: result.netWorth
+      });
+
+      // Mark step as complete after user has entered asset/liability information
+      if (!hasMarkedComplete && result.totalAssets > 0) {
+        markStepComplete('net-worth');
+        setHasMarkedComplete(true);
+      }
     } catch (error) {
       setResults(null);
     }
-  }, [formValues]);
+  }, [formValues, setSharedData, markStepComplete, hasMarkedComplete]);
 
   return (
     <CalculatorLayout title="Net Worth Calculator" description="Calculate your total net worth by adding up assets and subtracting liabilities.">
@@ -96,6 +113,7 @@ export const NetWorthCalculator: React.FC = () => {
           ) : <p>Enter values to calculate net worth.</p>}
         </Card>
       </div>
+      <FlowNavigation currentStep="net-worth" />
     </CalculatorLayout>
   );
 };

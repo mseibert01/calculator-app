@@ -9,6 +9,9 @@ import { CalculatorLayout } from './CalculatorLayout';
 import { calculateHourlyToSalary } from '../../lib/calculations';
 import { useSharedData } from '../../context/SharedDataContext';
 import { formatCurrency, formatNumber } from '../../lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../ui/Button';
+import { ArrowRight, Home } from 'lucide-react';
 
 const schema = z.object({
   hourlyRate: z.number().min(0.01, 'Hourly rate must be greater than 0'),
@@ -22,6 +25,8 @@ type FormData = z.infer<typeof schema>;
 export const HourlyToSalary: React.FC = () => {
   const { sharedData, setSharedData } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateHourlyToSalary> | null>(null);
+  const [dataSaved, setDataSaved] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -44,11 +49,29 @@ export const HourlyToSalary: React.FC = () => {
     try {
       const result = calculateHourlyToSalary(formValues);
       setResults(result);
-      setSharedData({ annualSalary: result.annualSalary, hourlyRate: formValues.hourlyRate });
+      setSharedData({
+        annualSalary: result.annualSalary,
+        hourlyRate: formValues.hourlyRate,
+        grossIncome: result.annualSalary
+      });
+
+      // Show saved indicator
+      setDataSaved(true);
+      const timer = setTimeout(() => setDataSaved(false), 2000);
+
+      return () => clearTimeout(timer);
     } catch (error) {
       setResults(null);
     }
   }, [formValues, setSharedData]);
+
+  const handleContinue = () => {
+    navigate('/take-home-pay');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   return (
     <CalculatorLayout
@@ -58,7 +81,14 @@ export const HourlyToSalary: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Section */}
         <Card>
-          <h2 className="text-2xl font-bold mb-6">Enter Your Information</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Enter Your Information</h2>
+            {dataSaved && (
+              <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2 py-1 bg-green-50 dark:bg-green-900/30 rounded-full">
+                ✓ Saved
+              </span>
+            )}
+          </div>
 
           <div className="space-y-4">
             <Input
@@ -153,6 +183,39 @@ export const HourlyToSalary: React.FC = () => {
               work per year (accounting for paid time off).
             </p>
           </Card>
+        </div>
+      </div>
+
+      {/* Flow Navigation */}
+      <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40 mt-8">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <div className="flex-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Step 1 of 4: Calculate Your Salary
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                icon={<Home className="w-4 h-4" />}
+                onClick={handleGoHome}
+              >
+                Exit Flow
+              </Button>
+
+              <Button
+                variant="primary"
+                icon={<ArrowRight className="w-4 h-4" />}
+                onClick={handleContinue}
+                className="text-base px-6"
+                disabled={!results}
+              >
+                Continue to Income
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </CalculatorLayout>

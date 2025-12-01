@@ -1,217 +1,267 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
 import { ResultDisplay } from '../ui/ResultDisplay';
 import { CalculatorLayout } from './CalculatorLayout';
-import { calculateBudget } from '../../lib/calculations';
 import { formatCurrency } from '../../lib/utils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { useSharedData } from '../../context/SharedDataContext';
-import { SuggestionsSection } from '../ui/SuggestionCard';
-import { Home, TrendingUp } from 'lucide-react';
+import { useSharedData, BudgetCategory } from '../../context/SharedDataContext';
+import { FlowNavigation } from '../ui/FlowNavigation';
+import { Plus, Trash2 } from 'lucide-react';
 
-const schema = z.object({
-  monthlyIncome: z.number().min(1),
-  budgetRule: z.enum(['50-30-20', '60-20-20', 'custom']),
-  customNeeds: z.number().min(0).max(100).optional(),
-  customWants: z.number().min(0).max(100).optional(),
-  customSavings: z.number().min(0).max(100).optional(),
-});
+const DEFAULT_CATEGORIES: BudgetCategory[] = [
+  { id: '1', name: 'Housing (Rent/Mortgage)', amount: 0, type: 'need' },
+  { id: '2', name: 'Utilities', amount: 0, type: 'need' },
+  { id: '3', name: 'Groceries', amount: 0, type: 'need' },
+  { id: '4', name: 'Transportation', amount: 0, type: 'need' },
+  { id: '5', name: 'Insurance', amount: 0, type: 'need' },
+  { id: '6', name: 'Entertainment', amount: 0, type: 'want' },
+  { id: '7', name: 'Dining Out', amount: 0, type: 'want' },
+  { id: '8', name: 'Shopping', amount: 0, type: 'want' },
+  { id: '9', name: 'Emergency Fund', amount: 0, type: 'savings' },
+  { id: '10', name: 'Retirement', amount: 0, type: 'savings' },
+  { id: '11', name: 'Debt Payment', amount: 0, type: 'savings' },
+];
 
-type FormData = z.infer<typeof schema>;
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
+const COLORS = {
+  need: '#ef4444',
+  want: '#3b82f6',
+  savings: '#10b981'
+};
 
 export const BudgetCalculator: React.FC = () => {
-  const { financialProfile, setSharedData } = useSharedData();
-  const [results, setResults] = useState<ReturnType<typeof calculateBudget> | null>(null);
+  const { financialProfile, setSharedData, markStepComplete } = useSharedData();
+  const [monthlyIncome, setMonthlyIncome] = useState(financialProfile.netIncome ? financialProfile.netIncome / 12 : 5000);
+  const [categories, setCategories] = useState<BudgetCategory[]>(
+    financialProfile.budgetCategories || DEFAULT_CATEGORIES
+  );
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
+  const [dataSaved, setDataSaved] = useState(false);
 
-  const {
-    register,
-    watch,
-    formState: { errors }
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      monthlyIncome: financialProfile.netIncome ? financialProfile.netIncome / 12 : 5000,
-      budgetRule: '50-30-20',
-      customNeeds: 50,
-      customWants: 30,
-      customSavings: 20,
-    },
-    mode: 'onChange'
-  });
+  const totalNeeds = categories.filter(c => c.type === 'need').reduce((sum, c) => sum + c.amount, 0);
+  const totalWants = categories.filter(c => c.type === 'want').reduce((sum, c) => sum + c.amount, 0);
+  const totalSavings = categories.filter(c => c.type === 'savings').reduce((sum, c) => sum + c.amount, 0);
+  const totalSpent = totalNeeds + totalWants + totalSavings;
+  const remaining = monthlyIncome - totalSpent;
 
-  const formValues = watch();
-  const isCustom = formValues.budgetRule === 'custom';
+  const needsPercent = monthlyIncome > 0 ? (totalNeeds / monthlyIncome) * 100 : 0;
+  const wantsPercent = monthlyIncome > 0 ? (totalWants / monthlyIncome) * 100 : 0;
+  const savingsPercent = monthlyIncome > 0 ? (totalSavings / monthlyIncome) * 100 : 0;
+
+  const pieData = [
+    { name: 'Needs', value: totalNeeds, color: COLORS.need },
+    { name: 'Wants', value: totalWants, color: COLORS.want },
+    { name: 'Savings', value: totalSavings, color: COLORS.savings },
+  ].filter(item => item.value > 0);
 
   useEffect(() => {
-    try {
-      const result = calculateBudget(formValues);
-      setResults(result);
-      setSharedData({
-        netIncome: formValues.monthlyIncome * 12,
-        monthlyRetirementContribution: result.savings
-      });
-    } catch (error) {
-      setResults(null);
-    }
-  }, [formValues, setSharedData]);
+    // Save data
+    setSharedData({
+      monthlyIncome,
+      monthlyExpenses: {
+        needs: totalNeeds,
+        wants: totalWants,
+        savings: totalSavings
+      },
+      budgetCategories: categories
+    });
 
-  const pieData = results ? [
-    { name: 'Needs (Housing, Food, Bills)', value: results.needs },
-    { name: 'Wants (Entertainment, Dining)', value: results.wants },
-    { name: 'Savings & Debt', value: results.savings }
-  ] : [];
+    // Show saved indicator
+    if (totalSpent > 0) {
+      setDataSaved(true);
+      const timer = setTimeout(() => setDataSaved(false), 2000);
 
-  const suggestions = results ? [
-    {
-      title: "Find Your Dream Home",
-      description: `Based on your $${formatCurrency(results.needs)} needs budget, see what you can afford.`,
-      action: "Calculate Mortgage",
-      calculator: "/mortgage-calculator",
-      icon: <Home className="w-6 h-6" />
-    },
-    {
-      title: "Plan Your Retirement",
-      description: `Invest your $${formatCurrency(results.savings)} monthly savings for the future.`,
-      action: "Retirement Calculator",
-      calculator: "/retirement-calculator",
-      icon: <TrendingUp className="w-6 h-6" />
+      // Mark step as complete
+      if (!hasMarkedComplete) {
+        markStepComplete('budget');
+        setHasMarkedComplete(true);
+      }
+
+      return () => clearTimeout(timer);
     }
-  ] : [];
+  }, [monthlyIncome, categories, totalNeeds, totalWants, totalSavings, totalSpent, setSharedData, markStepComplete, hasMarkedComplete]);
+
+  const addCategory = (type: 'need' | 'want' | 'savings') => {
+    const newCategory: BudgetCategory = {
+      id: Date.now().toString(),
+      name: 'New Category',
+      amount: 0,
+      type
+    };
+    setCategories([...categories, newCategory]);
+  };
+
+  const updateCategory = (id: string, field: 'name' | 'amount', value: string | number) => {
+    setCategories(categories.map(cat =>
+      cat.id === id ? { ...cat, [field]: value } : cat
+    ));
+  };
+
+  const deleteCategory = (id: string) => {
+    setCategories(categories.filter(cat => cat.id !== id));
+  };
+
+  const CategorySection = ({ type, title, color }: { type: 'need' | 'want' | 'savings', title: string, color: string }) => {
+    const typeCategories = categories.filter(c => c.type === type);
+    const typeTotal = typeCategories.reduce((sum, c) => sum + c.amount, 0);
+    const typePercent = monthlyIncome > 0 ? (typeTotal / monthlyIncome) * 100 : 0;
+
+    return (
+      <Card className="border-l-4" style={{ borderLeftColor: color }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold">{title}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {formatCurrency(typeTotal)} ({typePercent.toFixed(1)}%)
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => addCategory(type)}
+            className="text-sm"
+          >
+            Add
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          {typeCategories.map((category) => (
+            <div key={category.id} className="flex items-center gap-2">
+              <Input
+                value={category.name}
+                onChange={(e) => updateCategory(category.id, 'name', e.target.value)}
+                className="flex-1"
+                placeholder="Category name"
+              />
+              <Input
+                type="number"
+                value={category.amount}
+                onChange={(e) => updateCategory(category.id, 'amount', parseFloat(e.target.value) || 0)}
+                prefix="$"
+                className="w-32"
+              />
+              <button
+                onClick={() => deleteCategory(category.id)}
+                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                aria-label="Delete category"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+
+          {typeCategories.length === 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+              No {title.toLowerCase()} categories yet. Click "Add" to create one.
+            </p>
+          )}
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <CalculatorLayout
       title="Budget Calculator"
-      description="Plan your spending with the popular 50/30/20 budgeting rule or create a custom budget."
+      description="Create a detailed monthly budget by category and track your spending."
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Input */}
         <div className="space-y-6">
           <Card>
-            <h2 className="text-2xl font-bold mb-6">Your Income</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Monthly Income</h2>
+              {dataSaved && (
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2 py-1 bg-green-50 dark:bg-green-900/30 rounded-full">
+                  ✓ Saved
+                </span>
+              )}
+            </div>
+            <Input
+              label="Take-Home Pay"
+              type="number"
+              value={monthlyIncome}
+              onChange={(e) => setMonthlyIncome(parseFloat(e.target.value) || 0)}
+              prefix="$"
+            />
+          </Card>
+
+          <CategorySection type="need" title="Needs (Essentials)" color={COLORS.need} />
+          <CategorySection type="want" title="Wants (Lifestyle)" color={COLORS.want} />
+          <CategorySection type="savings" title="Savings & Debt" color={COLORS.savings} />
+        </div>
+
+        {/* Right Column - Results */}
+        <div className="space-y-6">
+          <Card>
+            <h2 className="text-2xl font-bold mb-6">Budget Summary</h2>
             <div className="space-y-4">
-              <Input
-                label="Monthly Take-Home Income"
-                type="number"
-                prefix="$"
-                {...register('monthlyIncome', { valueAsNumber: true })}
-                error={errors.monthlyIncome?.message}
+              <ResultDisplay
+                label="Monthly Income"
+                value={formatCurrency(monthlyIncome)}
+                size="large"
               />
-              <Select
-                label="Budget Rule"
-                {...register('budgetRule')}
-                options={[
-                  { value: '50-30-20', label: '50/30/20 Rule (Recommended)' },
-                  { value: '60-20-20', label: '60/20/20 Rule (Conservative)' },
-                  { value: 'custom', label: 'Custom Budget' }
-                ]}
-              />
+
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t dark:border-gray-700">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Needs</p>
+                  <p className="text-lg font-bold" style={{ color: COLORS.need }}>
+                    {formatCurrency(totalNeeds)}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {needsPercent.toFixed(1)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Wants</p>
+                  <p className="text-lg font-bold" style={{ color: COLORS.want }}>
+                    {formatCurrency(totalWants)}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {wantsPercent.toFixed(1)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Savings</p>
+                  <p className="text-lg font-bold" style={{ color: COLORS.savings }}>
+                    {formatCurrency(totalSavings)}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {savingsPercent.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t dark:border-gray-700">
+                <ResultDisplay
+                  label="Remaining"
+                  value={formatCurrency(remaining)}
+                  variant={remaining >= 0 ? 'positive' : 'negative'}
+                />
+              </div>
             </div>
           </Card>
 
-          {isCustom && (
+          {/* Pie Chart */}
+          {pieData.length > 0 && (
             <Card>
-              <h2 className="text-2xl font-bold mb-6">Custom Percentages</h2>
-              <div className="space-y-4">
-                <Input
-                  label="Needs %"
-                  type="number"
-                  suffix="%"
-                  {...register('customNeeds', { valueAsNumber: true })}
-                  error={errors.customNeeds?.message}
-                />
-                <Input
-                  label="Wants %"
-                  type="number"
-                  suffix="%"
-                  {...register('customWants', { valueAsNumber: true })}
-                  error={errors.customWants?.message}
-                />
-                <Input
-                  label="Savings & Debt %"
-                  type="number"
-                  suffix="%"
-                  {...register('customSavings', { valueAsNumber: true })}
-                  error={errors.customSavings?.message}
-                />
-                {isCustom && formValues.customNeeds && formValues.customWants && formValues.customSavings && (
-                  <p className={`text-sm ${
-                    formValues.customNeeds + formValues.customWants + formValues.customSavings === 100
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                    Total: {formValues.customNeeds + formValues.customWants + formValues.customSavings}%
-                    {formValues.customNeeds + formValues.customWants + formValues.customSavings !== 100 && ' (Should equal 100%)'}
-                  </p>
-                )}
-              </div>
-            </Card>
-          )}
-
-          <Card>
-            <h3 className="font-bold mb-2">What is the 50/30/20 Rule?</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              This popular budgeting method divides your after-tax income into three categories:
-            </p>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-              <li><strong>50% Needs:</strong> Housing, utilities, groceries, insurance, minimum debt payments</li>
-              <li><strong>30% Wants:</strong> Dining out, entertainment, hobbies, subscriptions</li>
-              <li><strong>20% Savings:</strong> Emergency fund, retirement, extra debt payments, investments</li>
-            </ul>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <h2 className="text-2xl font-bold mb-6">Your Budget</h2>
-            {results ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <ResultDisplay
-                    label="Needs"
-                    value={formatCurrency(results.needs)}
-                    context={`${results.needsPercentage}%`}
-                  />
-                  <ResultDisplay
-                    label="Wants"
-                    value={formatCurrency(results.wants)}
-                    context={`${results.wantsPercentage}%`}
-                  />
-                  <ResultDisplay
-                    label="Savings"
-                    value={formatCurrency(results.savings)}
-                    context={`${results.savingsPercentage}%`}
-                    variant="positive"
-                  />
-                </div>
-              </div>
-            ) : (
-              <p>Enter your income to see your budget breakdown.</p>
-            )}
-          </Card>
-
-          {results && (
-            <Card>
-              <h3 className="text-xl font-bold mb-4">Budget Breakdown</h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <h3 className="text-lg font-bold mb-4">Spending Breakdown</h3>
+              <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
                     data={pieData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {pieData.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -220,10 +270,29 @@ export const BudgetCalculator: React.FC = () => {
               </ResponsiveContainer>
             </Card>
           )}
+
+          {/* Budget Health */}
+          <Card>
+            <h3 className="text-lg font-bold mb-3">Budget Health</h3>
+            <div className="space-y-3">
+              <div className={`p-3 rounded-lg ${needsPercent <= 50 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'}`}>
+                <p className="text-sm font-semibold mb-1">Needs: {needsPercent.toFixed(1)}%</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {needsPercent <= 50 ? '✓ On track' : '⚠ Try to keep under 50%'}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${savingsPercent >= 20 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'}`}>
+                <p className="text-sm font-semibold mb-1">Savings: {savingsPercent.toFixed(1)}%</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {savingsPercent >= 20 ? '✓ Great job!' : '⚠ Aim for at least 20%'}
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
 
-      {results && <SuggestionsSection suggestions={suggestions} title="Next Steps" />}
+      <FlowNavigation currentStep="budget" />
     </CalculatorLayout>
   );
 };

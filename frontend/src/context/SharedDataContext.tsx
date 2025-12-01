@@ -1,6 +1,14 @@
 // src/context/SharedDataContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'need' | 'want' | 'savings';
+}
+
 export interface FinancialProfile {
   // Income
   hourlyRate?: number;
@@ -41,11 +49,43 @@ export interface FinancialProfile {
   // Debts
   totalDebt?: number;
   monthlyDebtPayment?: number;
+  debts?: Array<{
+    name: string;
+    balance: number;
+    interestRate: number;
+    minimumPayment: number;
+  }>;
 
   // Goals
   savingsGoal?: number;
   savingsTimeframe?: number;
   emergencyFundGoal?: number;
+
+  // Assets (for net worth)
+  assets?: Array<{
+    name: string;
+    value: number;
+  }>;
+  totalAssets?: number;
+  netWorth?: number;
+
+  // Budget
+  monthlyIncome?: number;
+  monthlyExpenses?: {
+    needs?: number;
+    wants?: number;
+    savings?: number;
+  };
+  budgetCategories?: BudgetCategory[];
+}
+
+
+export type FlowStep = 'take-home-pay' | 'budget' | 'debt-payoff' | 'net-worth';
+
+export interface FlowProgress {
+  completedSteps: FlowStep[];
+  dismissed: boolean;
+  lastUpdated: number;
 }
 
 // Legacy support
@@ -56,9 +96,17 @@ interface SharedDataContextType {
   setSharedData: (data: Partial<SharedData>) => void;
   clearSharedData: () => void;
   financialProfile: FinancialProfile;
+  flowProgress: FlowProgress;
+  markStepComplete: (step: FlowStep) => void;
+  dismissFlow: () => void;
+  resetFlow: () => void;
+  isFlowComplete: boolean;
+  nextFlowStep: FlowStep | null;
 }
 
 const SharedDataContext = createContext<SharedDataContextType | undefined>(undefined);
+
+const FLOW_STEPS: FlowStep[] = ['take-home-pay', 'budget', 'debt-payoff', 'net-worth'];
 
 export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [sharedData, setSharedDataState] = useState<SharedData>(() => {
@@ -68,6 +116,16 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (error) {
       console.error('Error reading from localStorage', error);
       return {};
+    }
+  });
+
+  const [flowProgress, setFlowProgress] = useState<FlowProgress>(() => {
+    try {
+      const item = window.localStorage.getItem('calculatorFlowProgress');
+      return item ? JSON.parse(item) : { completedSteps: [], dismissed: false, lastUpdated: Date.now() };
+    } catch (error) {
+      console.error('Error reading flow progress from localStorage', error);
+      return { completedSteps: [], dismissed: false, lastUpdated: Date.now() };
     }
   });
 
@@ -84,6 +142,46 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
+  const markStepComplete = (step: FlowStep) => {
+    setFlowProgress(prev => {
+      if (prev.completedSteps.includes(step)) return prev;
+      return {
+        ...prev,
+        completedSteps: [...prev.completedSteps, step],
+        lastUpdated: Date.now()
+      };
+    });
+  };
+
+  const dismissFlow = () => {
+    setFlowProgress(prev => ({
+      ...prev,
+      dismissed: true,
+      lastUpdated: Date.now()
+    }));
+  };
+
+  const resetFlow = () => {
+    setFlowProgress({
+      completedSteps: [],
+      dismissed: false,
+      lastUpdated: Date.now()
+    });
+    // Also clear all shared data
+    clearSharedData();
+  };
+
+  const isFlowComplete = flowProgress.completedSteps.length === FLOW_STEPS.length;
+
+  const nextFlowStep = (() => {
+    for (const step of FLOW_STEPS) {
+      if (!flowProgress.completedSteps.includes(step)) {
+        return step;
+      }
+    }
+    return null;
+  })();
+
   useEffect(() => {
     try {
       window.localStorage.setItem('sharedCalculatorData', JSON.stringify(sharedData));
@@ -92,12 +190,26 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, [sharedData]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('calculatorFlowProgress', JSON.stringify(flowProgress));
+    } catch (error) {
+      console.error('Error writing flow progress to localStorage', error);
+    }
+  }, [flowProgress]);
+
   return (
     <SharedDataContext.Provider value={{
       sharedData,
       setSharedData,
       clearSharedData,
-      financialProfile: sharedData
+      financialProfile: sharedData,
+      flowProgress,
+      markStepComplete,
+      dismissFlow,
+      resetFlow,
+      isFlowComplete,
+      nextFlowStep
     }}>
       {children}
     </SharedDataContext.Provider>

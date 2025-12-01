@@ -10,6 +10,7 @@ import { calculateTakeHomePay } from '../../lib/calculations';
 import { formatCurrency } from '../../lib/utils';
 import { useSharedData } from '../../context/SharedDataContext';
 import { Select } from '../ui/Select';
+import { FlowNavigation } from '../ui/FlowNavigation';
 
 const schema = z.object({
   grossIncome: z.number().min(1, 'Gross income must be greater than 0'),
@@ -42,8 +43,9 @@ const states = [
 ];
 
 export const TakeHomePay: React.FC = () => {
-  const { sharedData, setSharedData } = useSharedData();
+  const { sharedData, setSharedData, markStepComplete } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateTakeHomePay> | null>(null);
+  const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
 
   const {
     register,
@@ -67,12 +69,23 @@ export const TakeHomePay: React.FC = () => {
       const result = calculateTakeHomePay(formValues);
       setResults(result);
       if (formValues.payFrequency === 'annually') {
-        setSharedData({ annualSalary: formValues.grossIncome });
+        setSharedData({
+          annualSalary: formValues.grossIncome,
+          netIncome: result.netPay,
+          filingStatus: formValues.filingStatus,
+          state: formValues.state
+        });
+      }
+
+      // Mark step as complete after user has entered valid data
+      if (!hasMarkedComplete && result.netPay > 0) {
+        markStepComplete('take-home-pay');
+        setHasMarkedComplete(true);
       }
     } catch (error) {
       setResults(null);
     }
-  }, [formValues, setSharedData]);
+  }, [formValues, setSharedData, markStepComplete, hasMarkedComplete]);
 
   return (
     <CalculatorLayout
@@ -153,6 +166,7 @@ export const TakeHomePay: React.FC = () => {
           </Card>
         </div>
       </div>
+      <FlowNavigation currentStep="take-home-pay" />
     </CalculatorLayout>
   );
 };

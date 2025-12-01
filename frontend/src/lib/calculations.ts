@@ -1,4 +1,5 @@
 import { costOfLivingData, CityCostOfLiving } from '../data/costOfLivingData';
+import { calculateStateTax } from './stateTaxRates';
 
 export interface HourlyToSalaryInput {
   hourlyRate: number;
@@ -52,54 +53,71 @@ export const calculateHourlyToSalary = (input: HourlyToSalaryInput): HourlyToSal
 };
 
 export const calculateTakeHomePay = (input: TakeHomePayInput): TakeHomePayResult => {
-
   let annualGrossIncome = input.grossIncome;
 
-
-
   switch (input.payFrequency) {
-
     case 'monthly':
-
       annualGrossIncome *= 12;
-
       break;
-
     case 'biweekly':
-
       annualGrossIncome *= 26;
-
       break;
-
     case 'weekly':
-
       annualGrossIncome *= 52;
-
       break;
-
   }
 
-  
+  // Calculate Federal Income Tax using 2025 brackets
+  const standardDeduction = input.filingStatus === 'married' ? 30000 : 15000;
+  const taxableIncome = Math.max(0, annualGrossIncome - standardDeduction);
 
-  // Simplified tax rates
+  let federalTax = 0;
+  const federalBrackets = input.filingStatus === 'married'
+    ? [
+        { rate: 0.10, min: 0, max: 23200 },
+        { rate: 0.12, min: 23200, max: 94300 },
+        { rate: 0.22, min: 94300, max: 201050 },
+        { rate: 0.24, min: 201050, max: 383900 },
+        { rate: 0.32, min: 383900, max: 487450 },
+        { rate: 0.35, min: 487450, max: 731200 },
+        { rate: 0.37, min: 731200, max: Infinity },
+      ]
+    : [
+        { rate: 0.10, min: 0, max: 11600 },
+        { rate: 0.12, min: 11600, max: 47150 },
+        { rate: 0.22, min: 47150, max: 100525 },
+        { rate: 0.24, min: 100525, max: 191950 },
+        { rate: 0.32, min: 191950, max: 243725 },
+        { rate: 0.35, min: 243725, max: 609350 },
+        { rate: 0.37, min: 609350, max: Infinity },
+      ];
 
-  const federalTaxRate = 0.15;
+  for (const bracket of federalBrackets) {
+    if (taxableIncome > bracket.min) {
+      const taxableInBracket = Math.min(taxableIncome, bracket.max) - bracket.min;
+      federalTax += taxableInBracket * bracket.rate;
+    }
+  }
 
-  const stateTaxRate = 0.05; // This is a major simplification
+  // Calculate State Tax using accurate state data
+  const stateTax = calculateStateTax(annualGrossIncome, input.state, input.filingStatus);
 
+  // FICA taxes
   const socialSecurityRate = 0.062;
+  const socialSecurityWageBase = 168600; // 2025 limit
+  const socialSecurity = Math.min(annualGrossIncome, socialSecurityWageBase) * socialSecurityRate;
 
+  // Medicare tax - 1.45% base rate
   const medicareRate = 0.0145;
+  const baseMedicare = annualGrossIncome * medicareRate;
 
+  // Additional Medicare Tax - 0.9% on income over threshold (2025)
+  const additionalMedicareThreshold = input.filingStatus === 'married' ? 250000 : 200000;
+  const additionalMedicare = annualGrossIncome > additionalMedicareThreshold
+    ? (annualGrossIncome - additionalMedicareThreshold) * 0.009
+    : 0;
 
-
-  const federalTax = annualGrossIncome * federalTaxRate;
-
-  const stateTax = annualGrossIncome * stateTaxRate;
-
-  const socialSecurity = annualGrossIncome * socialSecurityRate;
-
-  const medicare = annualGrossIncome * medicareRate;
+  const medicare = baseMedicare + additionalMedicare;
 
 
 
@@ -173,37 +191,91 @@ export const calculateTakeHomePay = (input: TakeHomePayInput): TakeHomePayResult
 
 
 
+
+
+
+
+
+
+
+
 export interface CostOfLivingInput {
+
+
 
     currentCity: string;
 
+
+
     newCity: string;
+
+
 
     currentSalary: number;
 
+
+
+    filingStatus: 'single' | 'married';
+
+
+
 }
+
+
+
+
 
 
 
 export interface CostOfLivingResult {
 
+
+
     equivalentSalary: number;
+
+
 
     difference: number;
 
+
+
     cityIndices: {
+
+
 
         current: CityCostOfLiving['indices'];
 
+
+
         new: CityCostOfLiving['indices'];
 
+
+
     };
+
+
+
+    currentTakeHomePay: TakeHomePayResult;
+
+
+
+    newTakeHomePay: TakeHomePayResult;
+
+
 
 }
 
 
 
+
+
+
+
 export const calculateCostOfLivingDifference = (input: CostOfLivingInput): CostOfLivingResult | null => {
+
+
+
+
 
 
 
@@ -247,6 +319,74 @@ export const calculateCostOfLivingDifference = (input: CostOfLivingInput): CostO
 
 
 
+    const currentCityState = input.currentCity.split(', ')[1];
+
+
+
+    const newCityState = input.newCity.split(', ')[1];
+
+
+
+
+
+
+
+    const currentTakeHomePay = calculateTakeHomePay({
+
+
+
+        grossIncome: input.currentSalary,
+
+
+
+        payFrequency: 'annually',
+
+
+
+        filingStatus: input.filingStatus,
+
+
+
+        state: currentCityState,
+
+
+
+    });
+
+
+
+
+
+
+
+    const newTakeHomePay = calculateTakeHomePay({
+
+
+
+        grossIncome: equivalentSalary,
+
+
+
+        payFrequency: 'annually',
+
+
+
+        filingStatus: input.filingStatus,
+
+
+
+        state: newCityState,
+
+
+
+    });
+
+
+
+
+
+
+
     return {
 
 
@@ -271,7 +411,15 @@ export const calculateCostOfLivingDifference = (input: CostOfLivingInput): CostO
 
 
 
-        }
+        },
+
+
+
+        currentTakeHomePay,
+
+
+
+        newTakeHomePay,
 
 
 
