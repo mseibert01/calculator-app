@@ -51,7 +51,6 @@ export const DebtPayoffCalculator: React.FC = () => {
   const {
     register,
     watch,
-    setValue,
     formState: { errors }
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,10 +63,6 @@ export const DebtPayoffCalculator: React.FC = () => {
   });
 
   const formValues = watch();
-
-  useEffect(() => {
-    setValue('debts', debts);
-  }, [debts, setValue]);
 
   useEffect(() => {
     try {

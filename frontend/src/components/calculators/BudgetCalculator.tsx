@@ -30,6 +30,86 @@ const COLORS = {
   savings: '#10b981'
 };
 
+const CategorySection = ({
+  type,
+  title,
+  color,
+  categories,
+  monthlyIncome,
+  updateCategory,
+  addCategory,
+  deleteCategory
+}: {
+  type: 'need' | 'want' | 'savings',
+  title: string,
+  color: string,
+  categories: BudgetCategory[],
+  monthlyIncome: number,
+  updateCategory: (id: string, field: 'name' | 'amount', value: string | number) => void,
+  addCategory: (type: 'need' | 'want' | 'savings') => void,
+  deleteCategory: (id: string) => void
+}) => {
+  const typeCategories = categories.filter(c => c.type === type);
+  const typeTotal = typeCategories.reduce((sum, c) => sum + c.amount, 0);
+  const typePercent = monthlyIncome > 0 ? (typeTotal / monthlyIncome) * 100 : 0;
+
+  return (
+    <Card className="border-l-4" style={{ borderLeftColor: color }}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-xl font-bold">{title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {formatCurrency(typeTotal)} ({typePercent.toFixed(1)}%)
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          icon={<Plus className="w-4 h-4" />}
+          onClick={() => addCategory(type)}
+          className="text-sm"
+        >
+          Add
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {typeCategories.map((category) => (
+          <div key={category.id} className="flex items-center gap-2">
+            <Input
+              value={category.name}
+              onChange={(e) => updateCategory(category.id, 'name', e.target.value)}
+              className="flex-1"
+              placeholder="Category name"
+            />
+            <Input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*"
+              value={category.amount}
+              onChange={(e) => updateCategory(category.id, 'amount', parseFloat(e.target.value) || 0)}
+              prefix="$"
+              className="w-32"
+            />
+            <button
+              onClick={() => deleteCategory(category.id)}
+              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+              aria-label="Delete category"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+
+        {typeCategories.length === 0 && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            No {title.toLowerCase()} categories yet. Click "Add" to create one.
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+};
+
 export const BudgetCalculator: React.FC = () => {
   const { financialProfile, setSharedData, markStepComplete } = useSharedData();
   const [monthlyIncome, setMonthlyIncome] = useState(financialProfile.netIncome ? financialProfile.netIncome / 12 : 5000);
@@ -102,68 +182,6 @@ export const BudgetCalculator: React.FC = () => {
     setCategories(categories.filter(cat => cat.id !== id));
   };
 
-  const CategorySection = ({ type, title, color }: { type: 'need' | 'want' | 'savings', title: string, color: string }) => {
-    const typeCategories = categories.filter(c => c.type === type);
-    const typeTotal = typeCategories.reduce((sum, c) => sum + c.amount, 0);
-    const typePercent = monthlyIncome > 0 ? (typeTotal / monthlyIncome) * 100 : 0;
-
-    return (
-      <Card className="border-l-4" style={{ borderLeftColor: color }}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold">{title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {formatCurrency(typeTotal)} ({typePercent.toFixed(1)}%)
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => addCategory(type)}
-            className="text-sm"
-          >
-            Add
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {typeCategories.map((category) => (
-            <div key={category.id} className="flex items-center gap-2">
-              <Input
-                value={category.name}
-                onChange={(e) => updateCategory(category.id, 'name', e.target.value)}
-                className="flex-1"
-                placeholder="Category name"
-              />
-              <Input
-                type="text"
-                inputMode="decimal"
-                pattern="[0-9]*"
-                value={category.amount}
-                onChange={(e) => updateCategory(category.id, 'amount', parseFloat(e.target.value) || 0)}
-                prefix="$"
-                className="w-32"
-              />
-              <button
-                onClick={() => deleteCategory(category.id)}
-                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                aria-label="Delete category"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-
-          {typeCategories.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-              No {title.toLowerCase()} categories yet. Click "Add" to create one.
-            </p>
-          )}
-        </div>
-      </Card>
-    );
-  };
-
   return (
     <CalculatorLayout
       title="Budget Calculator"
@@ -192,9 +210,36 @@ export const BudgetCalculator: React.FC = () => {
             />
           </Card>
 
-          <CategorySection type="need" title="Needs (Essentials)" color={COLORS.need} />
-          <CategorySection type="want" title="Wants (Lifestyle)" color={COLORS.want} />
-          <CategorySection type="savings" title="Savings & Debt" color={COLORS.savings} />
+          <CategorySection
+            type="need"
+            title="Needs (Essentials)"
+            color={COLORS.need}
+            categories={categories}
+            monthlyIncome={monthlyIncome}
+            updateCategory={updateCategory}
+            addCategory={addCategory}
+            deleteCategory={deleteCategory}
+          />
+          <CategorySection
+            type="want"
+            title="Wants (Lifestyle)"
+            color={COLORS.want}
+            categories={categories}
+            monthlyIncome={monthlyIncome}
+            updateCategory={updateCategory}
+            addCategory={addCategory}
+            deleteCategory={deleteCategory}
+          />
+          <CategorySection
+            type="savings"
+            title="Savings & Debt"
+            color={COLORS.savings}
+            categories={categories}
+            monthlyIncome={monthlyIncome}
+            updateCategory={updateCategory}
+            addCategory={addCategory}
+            deleteCategory={deleteCategory}
+          />
         </div>
 
         {/* Right Column - Results */}

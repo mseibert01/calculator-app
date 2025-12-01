@@ -28,23 +28,23 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export const NetWorthCalculator: React.FC = () => {
-  const { setSharedData, markStepComplete } = useSharedData();
+  const { financialProfile, setSharedData, markStepComplete } = useSharedData();
   const [results, setResults] = useState<ReturnType<typeof calculateNetWorth> | null>(null);
   const [hasMarkedComplete, setHasMarkedComplete] = useState(false);
   const { register, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      cashAndSavings: 25000,
-      investments: 50000,
-      retirement: 100000,
-      homeValue: 400000,
-      vehicleValue: 20000,
-      otherAssets: 10000,
-      mortgage: 300000,
-      studentLoans: 30000,
-      carLoans: 15000,
-      creditCards: 5000,
-      otherDebts: 0,
+      cashAndSavings: financialProfile.assets?.find(a => a.name === 'Cash & Savings')?.value ?? 25000,
+      investments: financialProfile.assets?.find(a => a.name === 'Investments')?.value ?? 50000,
+      retirement: financialProfile.assets?.find(a => a.name === 'Retirement Accounts')?.value ?? 100000,
+      homeValue: financialProfile.assets?.find(a => a.name === 'Home Value')?.value ?? 400000,
+      vehicleValue: financialProfile.assets?.find(a => a.name === 'Vehicle Value')?.value ?? 20000,
+      otherAssets: financialProfile.assets?.find(a => a.name === 'Other Assets')?.value ?? 10000,
+      mortgage: financialProfile.debts?.find(d => d.name === 'Mortgage')?.balance ?? 300000,
+      studentLoans: financialProfile.debts?.find(d => d.name === 'Student Loans')?.balance ?? 30000,
+      carLoans: financialProfile.debts?.find(d => d.name === 'Car Loans')?.balance ?? 15000,
+      creditCards: financialProfile.debts?.find(d => d.name === 'Credit Cards')?.balance ?? 5000,
+      otherDebts: financialProfile.debts?.find(d => d.name === 'Other Debts')?.balance ?? 0,
     },
     mode: 'onChange'
   });
@@ -57,7 +57,26 @@ export const NetWorthCalculator: React.FC = () => {
       setResults(result);
 
       // Save net worth data
+      const assets = [
+        { name: 'Cash & Savings', value: formValues.cashAndSavings },
+        { name: 'Investments', value: formValues.investments },
+        { name: 'Retirement Accounts', value: formValues.retirement },
+        { name: 'Home Value', value: formValues.homeValue },
+        { name: 'Vehicle Value', value: formValues.vehicleValue },
+        { name: 'Other Assets', value: formValues.otherAssets },
+      ];
+
+      const debts = [
+        { name: 'Mortgage', balance: formValues.mortgage, interestRate: 0, minimumPayment: 0 },
+        { name: 'Student Loans', balance: formValues.studentLoans, interestRate: 0, minimumPayment: 0 },
+        { name: 'Car Loans', balance: formValues.carLoans, interestRate: 0, minimumPayment: 0 },
+        { name: 'Credit Cards', balance: formValues.creditCards, interestRate: 0, minimumPayment: 0 },
+        { name: 'Other Debts', balance: formValues.otherDebts, interestRate: 0, minimumPayment: 0 },
+      ];
+      
       setSharedData({
+        assets,
+        debts,
         totalAssets: result.totalAssets,
         netWorth: result.netWorth
       });
