@@ -46,7 +46,7 @@ export const FlowBanner: React.FC = () => {
   if (flowProgress.dismissed || isFlowComplete) return null;
 
   const completedCount = flowProgress.completedSteps.length;
-  const totalSteps = 4;
+  const totalSteps = Object.keys(FLOW_STEP_INFO).length;
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();

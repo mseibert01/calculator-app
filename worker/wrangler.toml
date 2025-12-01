@@ -12,11 +12,3 @@ name = "financial-calculators-worker-dev"
 
 [env.prod]
 name = "financial-calculators-worker"
-
-[[services]]
-binding = "admin"
-service = "admin-worker"
-
-[env.prod.services]
-binding = "admin"
-service = "admin-worker-prod"
