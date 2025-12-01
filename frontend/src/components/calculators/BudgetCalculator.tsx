@@ -136,7 +136,9 @@ export const BudgetCalculator: React.FC = () => {
                 placeholder="Category name"
               />
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 value={category.amount}
                 onChange={(e) => updateCategory(category.id, 'amount', parseFloat(e.target.value) || 0)}
                 prefix="$"
@@ -181,7 +183,9 @@ export const BudgetCalculator: React.FC = () => {
             </div>
             <Input
               label="Take-Home Pay"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*"
               value={monthlyIncome}
               onChange={(e) => setMonthlyIncome(parseFloat(e.target.value) || 0)}
               prefix="$"

@@ -4,6 +4,11 @@ import { Card } from '../components/ui/Card';
 import { useSharedData } from '../context/SharedDataContext';
 import { formatCurrency } from '../lib/utils';
 import {
+  getFinancialRecommendations,
+  calculateFinancialHealthScore
+} from '../lib/calculations';
+import { CircularProgressBar } from '../components/ui/CircularProgressBar';
+import {
   DollarSign,
   Wallet,
   CreditCard,
@@ -11,11 +16,15 @@ import {
   ArrowRight,
   CheckCircle2,
   Circle,
-  AlertCircle
+  AlertCircle,
+  Zap,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { financialProfile, flowProgress, isFlowComplete, resetFlow } = useSharedData();
+
+  const financialHealthScore = calculateFinancialHealthScore(financialProfile);
+  const recommendations = getFinancialRecommendations(financialProfile);
 
   const flowSteps = [
     {
@@ -62,6 +71,14 @@ export const Dashboard: React.FC = () => {
 
   const completedCount = flowProgress.completedSteps.length;
   const progressPercent = (completedCount / 4) * 100;
+
+  const getPriorityClass = (priority: 'high' | 'medium' | 'low') => {
+    switch (priority) {
+      case 'high': return 'border-red-500 bg-red-50 dark:bg-red-900/20';
+      case 'medium': return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20';
+      case 'low': return 'border-blue-500 bg-blue-50 dark:bg-blue-900/20';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -151,6 +168,41 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </Card>
+        
+        {isFlowComplete && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <Card className="lg:col-span-1 text-center">
+              <h2 className="text-2xl font-bold mb-4">Your Financial Health Score</h2>
+              <CircularProgressBar percentage={financialHealthScore} />
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                {financialHealthScore > 80 ? "Excellent!" : financialHealthScore > 60 ? "Good" : financialHealthScore > 40 ? "Fair" : "Needs Improvement"}
+              </p>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <h2 className="text-2xl font-bold mb-6">Personalized Recommendations</h2>
+              <div className="space-y-4">
+                {recommendations.length > 0 ? (
+                  recommendations.map(rec => (
+                    <div key={rec.id} className={`p-4 border-l-4 rounded-r-lg ${getPriorityClass(rec.priority)}`}>
+                      <div className="flex items-start gap-3">
+                        <Zap className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-1" />
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white mb-1">{rec.title}</h3>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{rec.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                    You're doing great! We don't have any specific recommendations for you right now.
+                  </p>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Financial Overview */}
         {completedCount > 0 && (
@@ -245,3 +297,4 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+

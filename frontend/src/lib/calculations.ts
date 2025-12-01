@@ -1,5 +1,7 @@
 import { costOfLivingData, CityCostOfLiving } from '../data/costOfLivingData';
 import { calculateStateTax } from './stateTaxRates';
+import { FinancialProfile } from '../context/SharedDataContext';
+import { RECOMMENDATIONS, Recommendation } from '../data/recommendations';
 
 export interface HourlyToSalaryInput {
   hourlyRate: number;
@@ -2074,6 +2076,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
+
         
 
 
@@ -2154,7 +2157,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-            totalInterest: yearStartValue - totalContributions,
+            totalInterest: yearStartValue * annualReturnRate,
 
 
 
@@ -2186,7 +2189,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-        
+
 
 
 
@@ -2266,70 +2269,6 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-    const finalValue = projection[projection.length-1];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const totalInterest = finalValue.totalInterest + (finalValue.initialInvestment + finalValue.totalContributions) * annualReturnRate;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     return {
 
 
@@ -2346,7 +2285,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-        futureValue: futureValue,
+        futureValue,
 
 
 
@@ -2362,7 +2301,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-        totalContributions: totalContributions,
+        totalContributions,
 
 
 
@@ -2378,7 +2317,7 @@ export const calculateInvestmentGrowth = (input: InvestmentGrowthInput): Investm
 
 
 
-        totalInterest: totalInterest,
+        totalInterest: futureValue - totalContributions,
 
 
 
@@ -3040,4 +2979,58 @@ export const calculateTax = (input: TaxInput): TaxResult => {
     effectiveRate,
     takeHomePay
   };
+};
+
+export const calculateFinancialHealthScore = (profile: FinancialProfile): number => {
+  // 1. Savings Rate
+  const annualSavings = (profile.monthlyExpenses?.savings || 0) * 12;
+  const savingsRate = (profile.grossIncome && profile.grossIncome > 0) ? (annualSavings / profile.grossIncome) * 100 : 0;
+  let savingsScore = 0;
+  if (savingsRate > 20) savingsScore = 5;
+  else if (savingsRate > 15) savingsScore = 4;
+  else if (savingsRate > 10) savingsScore = 3;
+  else if (savingsRate > 5) savingsScore = 2;
+  else savingsScore = 1;
+
+  // 2. Debt-to-Income Ratio
+  const monthlyDebtPayment = profile.monthlyDebtPayment || 0;
+  const grossMonthlyIncome = (profile.grossIncome || 0) / 12;
+  const dti = (grossMonthlyIncome > 0) ? (monthlyDebtPayment / grossMonthlyIncome) * 100 : 0;
+  let dtiScore = 0;
+  if (dti === 0) dtiScore = 5;
+  else if (dti < 20) dtiScore = 4;
+  else if (dti <= 36) dtiScore = 3;
+  else if (dti <= 43) dtiScore = 2;
+  else dtiScore = 1;
+
+  // 3. Net Worth to Income Ratio
+  const netWorth = profile.netWorth || 0;
+  const annualIncome = profile.annualSalary || profile.grossIncome || 0;
+  const nwRatio = (annualIncome > 0) ? netWorth / annualIncome : 0;
+  let nwScore = 0;
+  if (nwRatio > 2) nwScore = 5;
+  else if (nwRatio > 1) nwScore = 4;
+  else if (nwRatio > 0.5) nwScore = 3;
+  else if (nwRatio >= 0) nwScore = 2;
+  else nwScore = 1;
+  
+  // 4. Retirement Savings to Income Ratio
+  const retirementSavings = profile.currentRetirementSavings || 0;
+  const rsRatio = (annualIncome > 0) ? retirementSavings / annualIncome : 0;
+  let rsScore = 0;
+  if (rsRatio > 3) rsScore = 5;
+  else if (rsRatio > 2) rsScore = 4;
+  else if (rsRatio > 1) rsScore = 3;
+  else if (rsRatio > 0.5) rsScore = 2;
+  else rsScore = 1;
+
+  // Weighted Score
+  const weightedScore = (savingsScore * 0.3) + (dtiScore * 0.3) + (nwScore * 0.2) + (rsScore * 0.2);
+  
+  // Convert to a percentage out of 100
+  return (weightedScore / 5) * 100;
+};
+
+export const getFinancialRecommendations = (profile: FinancialProfile): Recommendation[] => {
+  return RECOMMENDATIONS.filter(rec => rec.condition(profile));
 };
