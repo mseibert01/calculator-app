@@ -1,6 +1,6 @@
 // Ad provider types and configuration
 
-export type AdProvider = 'google-adsense' | 'media-net' | 'none';
+export type AdProvider = 'google-adsense' | 'media-net' | 'propeller-ads' | 'adsterra' | 'none';
 
 export interface AdConfig {
   provider: AdProvider;
@@ -10,6 +10,14 @@ export interface AdConfig {
   };
   mediaNet?: {
     siteId: string;
+    enabled: boolean;
+  };
+  propellerAds?: {
+    zoneId: string;
+    enabled: boolean;
+  };
+  adsterra?: {
+    publisherId: string;
     enabled: boolean;
   };
 }

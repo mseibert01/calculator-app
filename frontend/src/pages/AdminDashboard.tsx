@@ -81,6 +81,46 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
+  const handlePropellerAdsToggle = () => {
+    setAdConfig(prev => ({
+      ...prev,
+      propellerAds: {
+        ...prev.propellerAds!,
+        enabled: !prev.propellerAds?.enabled
+      }
+    }));
+  };
+
+  const handlePropellerAdsZoneIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdConfig(prev => ({
+      ...prev,
+      propellerAds: {
+        ...prev.propellerAds!,
+        zoneId: e.target.value
+      }
+    }));
+  };
+
+  const handleAdsterraToggle = () => {
+    setAdConfig(prev => ({
+      ...prev,
+      adsterra: {
+        ...prev.adsterra!,
+        enabled: !prev.adsterra?.enabled
+      }
+    }));
+  };
+
+  const handleAdsterraPublisherIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdConfig(prev => ({
+      ...prev,
+      adsterra: {
+        ...prev.adsterra!,
+        publisherId: e.target.value
+      }
+    }));
+  };
+
   const handleSaveAdConfig = () => {
     adService.saveConfig(adConfig);
     setSaveMessage('Ad configuration saved! Page will reload to apply changes.');
@@ -179,6 +219,28 @@ export const AdminDashboard: React.FC = () => {
                     <input
                       type="radio"
                       name="provider"
+                      value="propeller-ads"
+                      checked={adConfig.provider === 'propeller-ads'}
+                      onChange={() => handleProviderChange('propeller-ads')}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm font-medium">PropellerAds</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="adsterra"
+                      checked={adConfig.provider === 'adsterra'}
+                      onChange={() => handleProviderChange('adsterra')}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm font-medium">Adsterra</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="provider"
                       value="none"
                       checked={adConfig.provider === 'none'}
                       onChange={() => handleProviderChange('none')}
@@ -244,6 +306,64 @@ export const AdminDashboard: React.FC = () => {
                 />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Your Media.net site ID from your publisher dashboard
+                </p>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-2xl font-bold mb-6">PropellerAds Configuration ⚡ (Fast Approval)</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="propellerads-enabled"
+                    checked={adConfig.propellerAds?.enabled ?? false}
+                    onChange={handlePropellerAdsToggle}
+                    className="w-4 h-4 text-primary-600"
+                  />
+                  <label htmlFor="propellerads-enabled" className="text-sm font-medium">
+                    Enable PropellerAds
+                  </label>
+                </div>
+                <Input
+                  label="Zone ID"
+                  type="text"
+                  value={adConfig.propellerAds?.zoneId ?? ''}
+                  onChange={handlePropellerAdsZoneIdChange}
+                  placeholder="Enter your PropellerAds Zone ID"
+                  disabled={!adConfig.propellerAds?.enabled}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Sign up at <a href="https://propellerads.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">propellerads.com</a> - Easy approval, instant setup!
+                </p>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-2xl font-bold mb-6">Adsterra Configuration ⚡ (Instant Approval)</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="adsterra-enabled"
+                    checked={adConfig.adsterra?.enabled ?? false}
+                    onChange={handleAdsterraToggle}
+                    className="w-4 h-4 text-primary-600"
+                  />
+                  <label htmlFor="adsterra-enabled" className="text-sm font-medium">
+                    Enable Adsterra
+                  </label>
+                </div>
+                <Input
+                  label="Publisher ID"
+                  type="text"
+                  value={adConfig.adsterra?.publisherId ?? ''}
+                  onChange={handleAdsterraPublisherIdChange}
+                  placeholder="Enter your Adsterra Publisher ID"
+                  disabled={!adConfig.adsterra?.enabled}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Sign up at <a href="https://www.adsterra.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">adsterra.com</a> - No approval needed, start immediately!
                 </p>
               </div>
             </Card>

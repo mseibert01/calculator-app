@@ -14,6 +14,14 @@ const DEFAULT_CONFIG: AdConfig = {
     siteId: '', // To be configured in admin
     enabled: false,
   },
+  propellerAds: {
+    zoneId: '', // To be configured in admin
+    enabled: false,
+  },
+  adsterra: {
+    publisherId: '', // To be configured in admin
+    enabled: false,
+  },
 };
 
 export class AdService {
@@ -77,12 +85,26 @@ export class AdService {
     this.saveConfig(this.config);
   }
 
+  public updatePropellerAdsConfig(zoneId: string, enabled: boolean): void {
+    this.config.propellerAds = { zoneId, enabled };
+    this.saveConfig(this.config);
+  }
+
+  public updateAdsterraConfig(publisherId: string, enabled: boolean): void {
+    this.config.adsterra = { publisherId, enabled };
+    this.saveConfig(this.config);
+  }
+
   public isProviderEnabled(provider: AdProvider): boolean {
     switch (provider) {
       case 'google-adsense':
         return this.config.googleAdSense?.enabled ?? false;
       case 'media-net':
         return this.config.mediaNet?.enabled ?? false;
+      case 'propeller-ads':
+        return this.config.propellerAds?.enabled ?? false;
+      case 'adsterra':
+        return this.config.adsterra?.enabled ?? false;
       case 'none':
         return true;
       default:

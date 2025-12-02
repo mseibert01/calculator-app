@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { adService } from '../../services/adService';
 import { GoogleAdSense } from '../ads/GoogleAdSense';
 import { MediaNetAd } from '../ads/MediaNetAd';
+import { PropellerAds } from '../ads/PropellerAds';
+import { AdsterraAd } from '../ads/AdsterraAd';
 import { AdPlacementProps } from '../../types/ads';
 
 const AdPlaceholder: React.FC<AdPlacementProps> = ({
@@ -56,6 +58,26 @@ const AdPlaceholder: React.FC<AdPlacementProps> = ({
     return (
       <MediaNetAd
         siteId={config.mediaNet.siteId}
+        className={className}
+      />
+    );
+  }
+
+  // Render PropellerAds
+  if (provider === 'propeller-ads' && config.propellerAds?.enabled && config.propellerAds.zoneId) {
+    return (
+      <PropellerAds
+        zoneId={config.propellerAds.zoneId}
+        className={className}
+      />
+    );
+  }
+
+  // Render Adsterra
+  if (provider === 'adsterra' && config.adsterra?.enabled && config.adsterra.publisherId) {
+    return (
+      <AdsterraAd
+        publisherId={config.adsterra.publisherId}
         className={className}
       />
     );
