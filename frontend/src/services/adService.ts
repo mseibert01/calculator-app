@@ -25,10 +25,11 @@ const DEFAULT_CONFIG: AdConfig = {
 export class AdService {
   private static instance: AdService;
   private config: AdConfig;
+  private configLoaded: Promise<void>;
 
   private constructor() {
     this.config = DEFAULT_CONFIG;
-    this.loadConfigFromServer();
+    this.configLoaded = this.loadConfigFromServer();
   }
 
   public static getInstance(): AdService {
@@ -43,11 +44,16 @@ export class AdService {
       const response = await fetch('/api/ad-config');
       if (response.ok) {
         this.config = await response.json();
+        console.log('Loaded ad config from server:', this.config);
         window.dispatchEvent(new CustomEvent('ad-config-changed', { detail: this.config }));
       }
     } catch (error) {
       console.error('Failed to load ad config from server:', error);
     }
+  }
+
+  public async waitForConfig(): Promise<void> {
+    await this.configLoaded;
   }
 
   public async saveConfig(config: AdConfig, adminPassword: string): Promise<boolean> {
