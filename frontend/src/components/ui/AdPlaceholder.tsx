@@ -15,14 +15,22 @@ const AdPlaceholder: React.FC<AdPlacementProps> = ({
   className = ''
 }) => {
   const [provider, setProvider] = useState(adService.getActiveProvider());
-  const config = adService.getConfig();
+  const [config, setConfig] = useState(adService.getConfig());
 
   useEffect(() => {
     const handleConfigChange = () => {
-      setProvider(adService.getActiveProvider());
+      const newProvider = adService.getActiveProvider();
+      const newConfig = adService.getConfig();
+      console.log('Ad config changed:', { provider: newProvider, config: newConfig });
+      setProvider(newProvider);
+      setConfig(newConfig);
     };
 
     window.addEventListener('ad-config-changed', handleConfigChange);
+
+    // Also reload config on mount
+    handleConfigChange();
+
     return () => {
       window.removeEventListener('ad-config-changed', handleConfigChange);
     };

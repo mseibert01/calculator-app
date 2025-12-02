@@ -29,35 +29,36 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && publisherId && adRef.current) {
+        // Configure Adsterra options BEFORE loading script
+        window.atOptions = {
+          key: publisherId,
+          format: 'iframe',
+          height: 250,
+          width: 300,
+          params: {}
+        };
+
         // Check if script already exists
         if (!document.getElementById(scriptId)) {
-          // Configure Adsterra options
-          window.atOptions = {
-            key: publisherId,
-            format: 'iframe',
-            height: 250,
-            width: 300,
-            params: {}
-          };
-
           const script = document.createElement('script');
           script.id = scriptId;
-          script.src = `//www.topcreativeformat.com/${publisherId}/invoke.js`;
+          script.type = 'text/javascript';
+          script.src = `https://www.highperformanceformat.com/${publisherId}/invoke.js`;
           script.async = true;
           script.onload = () => {
-            console.log('Adsterra loaded');
+            console.log('Adsterra loaded successfully');
           };
-          script.onerror = () => {
-            console.error('Failed to load Adsterra');
+          script.onerror = (e) => {
+            console.error('Failed to load Adsterra script:', e);
+            console.error('Script URL:', `https://www.highperformanceformat.com/${publisherId}/invoke.js`);
+            console.error('Publisher ID:', publisherId);
           };
 
-          if (adRef.current) {
-            adRef.current.appendChild(script);
-          }
+          document.head.appendChild(script);
         }
       }
     } catch (err) {
-      console.error('Adsterra error:', err);
+      console.error('Adsterra initialization error:', err);
     }
   }, [publisherId, scriptId]);
 
