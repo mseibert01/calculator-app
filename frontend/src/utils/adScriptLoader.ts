@@ -42,38 +42,19 @@ export class AdScriptLoader {
   }
 
   static loadPropellerAds(): void {
+    // PropellerAds loads its own script in the component
+    // We just mark it as loaded to prevent duplicate initialization
     if (this.propellerAdsLoaded) return;
-
-    const script = document.createElement('script');
-    script.src = '//niphaumeenses.net/vignette.min.js';
-    script.async = true;
-    script.setAttribute('data-zone', 'default');
-    script.setAttribute('data-sdk', 'show_8054058');
-    script.onload = () => {
-      this.propellerAdsLoaded = true;
-      console.log('PropellerAds script loaded');
-    };
-    script.onerror = () => {
-      console.error('Failed to load PropellerAds script');
-    };
-    document.body.appendChild(script);
+    this.propellerAdsLoaded = true;
+    console.log('PropellerAds will load its own scripts');
   }
 
   static loadAdsterra(): void {
+    // Adsterra loads its own script in the component
+    // We just mark it as loaded to prevent duplicate initialization
     if (this.adsterraLoaded) return;
-
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '//pl25005003.profitablegatetocontent.com/78/b4/15/78b415c370c2cc47bbf44ed66d2fdeef.js';
-    script.async = true;
-    script.onload = () => {
-      this.adsterraLoaded = true;
-      console.log('Adsterra script loaded');
-    };
-    script.onerror = () => {
-      console.error('Failed to load Adsterra script');
-    };
-    document.body.appendChild(script);
+    this.adsterraLoaded = true;
+    console.log('Adsterra will load its own scripts');
   }
 
   static async loadScriptsBasedOnConfig(): Promise<void> {
