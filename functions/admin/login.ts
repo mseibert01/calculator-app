@@ -1,9 +1,5 @@
 // functions/admin/login.ts
-interface Env {
-  ADMIN_PASSWORD?: string;
-}
-
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost = async ({ request, env }) => {
   try {
     const body = await request.json() as { password: string };
     const { password } = body;
