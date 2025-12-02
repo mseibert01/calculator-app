@@ -26,27 +26,31 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
   const adRef = useRef<HTMLDivElement>(null);
   const scriptId = `adsterra-ad-${publisherId}`;
 
+  console.log('AdsterraAd component received publisherId:', publisherId, 'length:', publisherId?.length);
+
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && publisherId && adRef.current) {
-        // Configure Adsterra options BEFORE loading script
-        window.atOptions = {
-          key: publisherId,
-          format: 'iframe',
-          height: 250,
-          width: 300,
-          params: {}
-        };
+        console.log('Loading Adsterra with publisher ID:', publisherId);
 
         // Check if script already exists
         if (!document.getElementById(scriptId)) {
+          // Configure Adsterra options BEFORE loading script
+          window.atOptions = {
+            key: publisherId,
+            format: 'iframe',
+            height: 250,
+            width: 300,
+            params: {}
+          };
+
           const script = document.createElement('script');
           script.id = scriptId;
           script.type = 'text/javascript';
           script.src = `https://www.highperformanceformat.com/${publisherId}/invoke.js`;
           script.async = true;
           script.onload = () => {
-            console.log('Adsterra loaded successfully');
+            console.log('Adsterra script loaded successfully');
           };
           script.onerror = (e) => {
             console.error('Failed to load Adsterra script:', e);
@@ -54,7 +58,8 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
             console.error('Publisher ID:', publisherId);
           };
 
-          document.head.appendChild(script);
+          // Append to the ad container instead of head
+          adRef.current.appendChild(script);
         }
       }
     } catch (err) {
@@ -63,10 +68,8 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
   }, [publisherId, scriptId]);
 
   return (
-    <div ref={adRef} className={`min-w-[300px] ${className}`}>
-      <div style={{ minHeight: '250px', display: 'block' }}>
-        {/* Adsterra ad will render here */}
-      </div>
+    <div ref={adRef} className={`min-w-[300px] ${className}`} style={{ minHeight: '250px', display: 'block' }}>
+      {/* Adsterra ad will render here */}
     </div>
   );
 };
