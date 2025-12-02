@@ -1,61 +1,73 @@
 // src/components/ui/AdPlaceholder.tsx
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { adService } from '../../services/adService';
+import { GoogleAdSense } from '../ads/GoogleAdSense';
+import { MediaNetAd } from '../ads/MediaNetAd';
+import { AdPlacementProps } from '../../types/ads';
 
-interface AdPlaceholderProps {
-  slot?: string;
-  format?: 'auto' | 'fluid' | 'rectangle' | 'vertical';
-  responsive?: boolean;
-  className?: string;
-}
-
-declare global {
-  interface Window {
-    adsbygoogle: unknown[];
-  }
-}
-
-const AdPlaceholder: React.FC<AdPlaceholderProps> = ({
+const AdPlaceholder: React.FC<AdPlacementProps> = ({
   slot = '3764792675',
   format = 'auto',
   responsive = true,
   className = ''
 }) => {
+  const [provider, setProvider] = useState(adService.getActiveProvider());
+  const config = adService.getConfig();
+
   useEffect(() => {
-    try {
-      // Push ad to Google AdSense
-      if (typeof window !== 'undefined' && window.adsbygoogle) {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    } catch (err) {
-      console.error('AdSense error:', err);
-    }
+    const handleConfigChange = () => {
+      setProvider(adService.getActiveProvider());
+    };
+
+    window.addEventListener('ad-config-changed', handleConfigChange);
+    return () => {
+      window.removeEventListener('ad-config-changed', handleConfigChange);
+    };
   }, []);
 
-  // For development/preview - show placeholder when AdSense is not configured
-  const isAdSenseConfigured = slot !== 'YOUR_AD_SLOT_ID';
-
-  if (!isAdSenseConfigured) {
+  // Show placeholder when ads are disabled
+  if (provider === 'none') {
     return (
       <div className={`flex items-center justify-center min-h-[250px] w-full bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-lg ${className}`}>
         <div className="text-center p-4">
           <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold mb-2">Advertisement</p>
-          <p className="text-gray-400 dark:text-gray-500 text-xs">Configure AdSense in AdPlaceholder.tsx</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Ads are currently disabled</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className={`min-w-[300px] ${className}`}>
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block', minHeight: '250px' }}
-        data-ad-client="ca-pub-2928849251278370"
-        data-ad-slot={slot}
-        data-ad-format={format}
-        data-full-width-responsive={responsive.toString()}
+  // Render Google AdSense
+  if (provider === 'google-adsense' && config.googleAdSense?.enabled) {
+    return (
+      <GoogleAdSense
+        publisherId={config.googleAdSense.publisherId}
+        slot={slot}
+        format={format}
+        responsive={responsive}
+        className={className}
       />
+    );
+  }
+
+  // Render Media.net
+  if (provider === 'media-net' && config.mediaNet?.enabled && config.mediaNet.siteId) {
+    return (
+      <MediaNetAd
+        siteId={config.mediaNet.siteId}
+        className={className}
+      />
+    );
+  }
+
+  // Fallback placeholder
+  return (
+    <div className={`flex items-center justify-center min-h-[250px] w-full bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-lg ${className}`}>
+      <div className="text-center p-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold mb-2">Advertisement</p>
+        <p className="text-gray-400 dark:text-gray-500 text-xs">Ad provider not configured</p>
+      </div>
     </div>
   );
 };

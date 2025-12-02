@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Table } from '../components/ui/Table';
+import { Input } from '../components/ui/Input';
+import { adService } from '../services/adService';
+import { AdProvider, AdConfig } from '../types/ads';
 
 interface UsageStat {
   calculator_name: string;
@@ -13,6 +16,9 @@ interface UsageStat {
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<UsageStat[]>([]);
+  const [adConfig, setAdConfig] = useState<AdConfig>(adService.getConfig());
+  const [activeTab, setActiveTab] = useState<'stats' | 'ads'>('stats');
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -21,13 +27,66 @@ export const AdminDashboard: React.FC = () => {
     } else {
       fetch('/admin/stats')
         .then(res => res.json())
-        .then(data => setStats(data.stats));
+        .then(data => setStats(data.stats))
+        .catch(err => console.error('Failed to load stats:', err));
     }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('isAdminAuthenticated');
     navigate('/admin');
+  };
+
+  const handleProviderChange = (provider: AdProvider) => {
+    setAdConfig(prev => ({ ...prev, provider }));
+  };
+
+  const handleGoogleAdSenseToggle = () => {
+    setAdConfig(prev => ({
+      ...prev,
+      googleAdSense: {
+        ...prev.googleAdSense!,
+        enabled: !prev.googleAdSense?.enabled
+      }
+    }));
+  };
+
+  const handleMediaNetToggle = () => {
+    setAdConfig(prev => ({
+      ...prev,
+      mediaNet: {
+        ...prev.mediaNet!,
+        enabled: !prev.mediaNet?.enabled
+      }
+    }));
+  };
+
+  const handleGooglePublisherIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdConfig(prev => ({
+      ...prev,
+      googleAdSense: {
+        ...prev.googleAdSense!,
+        publisherId: e.target.value
+      }
+    }));
+  };
+
+  const handleMediaNetSiteIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdConfig(prev => ({
+      ...prev,
+      mediaNet: {
+        ...prev.mediaNet!,
+        siteId: e.target.value
+      }
+    }));
+  };
+
+  const handleSaveAdConfig = () => {
+    adService.saveConfig(adConfig);
+    setSaveMessage('Ad configuration saved! Page will reload to apply changes.');
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
   };
 
   return (
@@ -37,25 +96,170 @@ export const AdminDashboard: React.FC = () => {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <Button onClick={handleLogout}>Logout</Button>
         </div>
-        <Card>
-          <h2 className="text-2xl font-bold mb-6">Usage Statistics</h2>
-          <Table>
-            <thead>
-              <tr>
-                <th className="text-left p-2">Calculator</th>
-                <th className="text-right p-2">Usage Count</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map((stat) => (
-                <tr key={stat.calculator_name}>
-                  <td className="p-2">{stat.calculator_name}</td>
-                  <td className="text-right p-2">{stat.count}</td>
+
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'stats'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Usage Statistics
+            </button>
+            <button
+              onClick={() => setActiveTab('ads')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'ads'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              Ad Provider Settings
+            </button>
+          </nav>
+        </div>
+
+        {/* Stats Tab */}
+        {activeTab === 'stats' && (
+          <Card>
+            <h2 className="text-2xl font-bold mb-6">Usage Statistics</h2>
+            <Table>
+              <thead>
+                <tr>
+                  <th className="text-left p-2">Calculator</th>
+                  <th className="text-right p-2">Usage Count</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card>
+              </thead>
+              <tbody>
+                {stats.map((stat) => (
+                  <tr key={stat.calculator_name}>
+                    <td className="p-2">{stat.calculator_name}</td>
+                    <td className="text-right p-2">{stat.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+        )}
+
+        {/* Ad Provider Tab */}
+        {activeTab === 'ads' && (
+          <div className="space-y-6">
+            <Card>
+              <h2 className="text-2xl font-bold mb-6">Active Ad Provider</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="google-adsense"
+                      checked={adConfig.provider === 'google-adsense'}
+                      onChange={() => handleProviderChange('google-adsense')}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm font-medium">Google AdSense</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="media-net"
+                      checked={adConfig.provider === 'media-net'}
+                      onChange={() => handleProviderChange('media-net')}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm font-medium">Media.net</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="none"
+                      checked={adConfig.provider === 'none'}
+                      onChange={() => handleProviderChange('none')}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm font-medium">Disabled</span>
+                  </label>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-2xl font-bold mb-6">Google AdSense Configuration</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="google-enabled"
+                    checked={adConfig.googleAdSense?.enabled ?? false}
+                    onChange={handleGoogleAdSenseToggle}
+                    className="w-4 h-4 text-primary-600"
+                  />
+                  <label htmlFor="google-enabled" className="text-sm font-medium">
+                    Enable Google AdSense
+                  </label>
+                </div>
+                <Input
+                  label="Publisher ID"
+                  type="text"
+                  value={adConfig.googleAdSense?.publisherId ?? ''}
+                  onChange={handleGooglePublisherIdChange}
+                  placeholder="ca-pub-XXXXXXXXXXXXXXXX"
+                  disabled={!adConfig.googleAdSense?.enabled}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Your Google AdSense publisher ID (starts with ca-pub-)
+                </p>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-2xl font-bold mb-6">Media.net Configuration</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="medianet-enabled"
+                    checked={adConfig.mediaNet?.enabled ?? false}
+                    onChange={handleMediaNetToggle}
+                    className="w-4 h-4 text-primary-600"
+                  />
+                  <label htmlFor="medianet-enabled" className="text-sm font-medium">
+                    Enable Media.net
+                  </label>
+                </div>
+                <Input
+                  label="Site ID"
+                  type="text"
+                  value={adConfig.mediaNet?.siteId ?? ''}
+                  onChange={handleMediaNetSiteIdChange}
+                  placeholder="Enter your Media.net Site ID"
+                  disabled={!adConfig.mediaNet?.enabled}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Your Media.net site ID from your publisher dashboard
+                </p>
+              </div>
+            </Card>
+
+            <div className="flex items-center justify-between">
+              <div>
+                {saveMessage && (
+                  <p className="text-sm text-green-600 dark:text-green-400">{saveMessage}</p>
+                )}
+              </div>
+              <Button onClick={handleSaveAdConfig}>
+                Save Ad Configuration
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
