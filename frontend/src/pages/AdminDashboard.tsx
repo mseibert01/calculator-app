@@ -122,14 +122,21 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleSaveAdConfig = async () => {
-    const success = await adService.saveConfig(adConfig);
+    // Get admin password from prompt for now (stored in memory only during session)
+    const adminPassword = prompt('Enter admin password to save:');
+    if (!adminPassword) {
+      setSaveMessage('Save cancelled - password required.');
+      return;
+    }
+
+    const success = await adService.saveConfig(adConfig, adminPassword);
     if (success) {
       setSaveMessage('Ad configuration saved! Page will reload to apply changes.');
       setTimeout(() => {
         window.location.reload();
       }, 2000);
     } else {
-      setSaveMessage('Failed to save ad configuration. Please try again.');
+      setSaveMessage('Failed to save ad configuration. Check password and try again.');
     }
   };
 

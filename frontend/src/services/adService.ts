@@ -50,11 +50,14 @@ export class AdService {
     }
   }
 
-  public async saveConfig(config: AdConfig): Promise<boolean> {
+  public async saveConfig(config: AdConfig, adminPassword: string): Promise<boolean> {
     try {
       const response = await fetch('/admin/ad-config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminPassword}`
+        },
         body: JSON.stringify(config)
       });
 
@@ -80,31 +83,6 @@ export class AdService {
 
   public getActiveProvider(): AdProvider {
     return this.config.provider;
-  }
-
-  public setProvider(provider: AdProvider): void {
-    this.config.provider = provider;
-    this.saveConfig(this.config);
-  }
-
-  public updateGoogleAdSenseConfig(publisherId: string, enabled: boolean): void {
-    this.config.googleAdSense = { publisherId, enabled };
-    this.saveConfig(this.config);
-  }
-
-  public updateMediaNetConfig(siteId: string, enabled: boolean): void {
-    this.config.mediaNet = { siteId, enabled };
-    this.saveConfig(this.config);
-  }
-
-  public updatePropellerAdsConfig(zoneId: string, enabled: boolean): void {
-    this.config.propellerAds = { zoneId, enabled };
-    this.saveConfig(this.config);
-  }
-
-  public updateAdsterraConfig(publisherId: string, enabled: boolean): void {
-    this.config.adsterra = { publisherId, enabled };
-    this.saveConfig(this.config);
   }
 
   public isProviderEnabled(provider: AdProvider): boolean {
