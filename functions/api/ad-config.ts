@@ -9,8 +9,9 @@ export const onRequestGet = async ({ env }: { env: Env }) => {
       'SELECT setting_value FROM site_settings WHERE setting_key = ?'
     ).bind('ad_config').first();
 
-    if (result) {
-      return new Response(JSON.parse(result.setting_value as string), {
+    if (result && result.setting_value) {
+      // setting_value is already a JSON string, return it directly
+      return new Response(result.setting_value as string, {
         headers: { 'Content-Type': 'application/json' }
       });
     }
