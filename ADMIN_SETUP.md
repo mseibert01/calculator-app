@@ -39,7 +39,23 @@ The admin authentication system uses environment variables for security. Follow 
 
 **Current default password: `admin`**
 
-### Production (Cloudflare Pages)
+### Production (Cloudflare Workers)
+
+The production password is stored as a Cloudflare Secret (encrypted and secure).
+
+**Setting/Updating the Password:**
+
+```bash
+# From the functions directory
+echo "your-secure-password" | npx wrangler secret put ADMIN_PASSWORD
+```
+
+**Current Production Setup:**
+- Password is stored as a Cloudflare Worker secret
+- See `ADMIN_PASSWORD.txt` (not in git) for the current password
+- To rotate the password, use the command above with a new password
+
+**For Cloudflare Pages (if using Pages instead of Workers):**
 
 1. Go to your Cloudflare dashboard
 2. Navigate to **Pages** > **Your Project** > **Settings** > **Environment Variables**

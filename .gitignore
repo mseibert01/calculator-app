@@ -36,5 +36,8 @@ lerna-debug.log*
 wrangler.toml.backup
 .dev.vars
 
+# Secrets
+ADMIN_PASSWORD.txt
+
 # OS
 Thumbs.db
