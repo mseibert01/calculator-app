@@ -2,8 +2,6 @@
 
 import { AdProvider, AdConfig } from '../types/ads';
 
-const AD_CONFIG_KEY = 'ad_config';
-
 const DEFAULT_CONFIG: AdConfig = {
   provider: 'google-adsense',
   googleAdSense: {
@@ -11,15 +9,15 @@ const DEFAULT_CONFIG: AdConfig = {
     enabled: true,
   },
   mediaNet: {
-    siteId: '', // To be configured in admin
+    siteId: '',
     enabled: false,
   },
   propellerAds: {
-    zoneId: '', // To be configured in admin
+    zoneId: '',
     enabled: false,
   },
   adsterra: {
-    publisherId: '', // To be configured in admin
+    publisherId: '',
     enabled: false,
   },
 };
@@ -29,7 +27,8 @@ export class AdService {
   private config: AdConfig;
 
   private constructor() {
-    this.config = this.loadConfig();
+    this.config = DEFAULT_CONFIG;
+    this.loadConfigFromServer();
   }
 
   public static getInstance(): AdService {
@@ -39,27 +38,40 @@ export class AdService {
     return AdService.instance;
   }
 
-  private loadConfig(): AdConfig {
+  private async loadConfigFromServer(): Promise<void> {
     try {
-      const stored = localStorage.getItem(AD_CONFIG_KEY);
-      if (stored) {
-        return JSON.parse(stored);
+      const response = await fetch('/api/ad-config');
+      if (response.ok) {
+        this.config = await response.json();
+        window.dispatchEvent(new CustomEvent('ad-config-changed', { detail: this.config }));
       }
     } catch (error) {
-      console.error('Failed to load ad config:', error);
+      console.error('Failed to load ad config from server:', error);
     }
-    return DEFAULT_CONFIG;
   }
 
-  public saveConfig(config: AdConfig): void {
+  public async saveConfig(config: AdConfig): Promise<boolean> {
     try {
-      localStorage.setItem(AD_CONFIG_KEY, JSON.stringify(config));
-      this.config = config;
-      // Trigger page reload to apply new ad provider
-      window.dispatchEvent(new CustomEvent('ad-config-changed', { detail: config }));
+      const response = await fetch('/admin/ad-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+
+      if (response.ok) {
+        this.config = config;
+        window.dispatchEvent(new CustomEvent('ad-config-changed', { detail: config }));
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Failed to save ad config:', error);
+      return false;
     }
+  }
+
+  public async refreshConfig(): Promise<void> {
+    await this.loadConfigFromServer();
   }
 
   public getConfig(): AdConfig {

@@ -121,12 +121,16 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
-  const handleSaveAdConfig = () => {
-    adService.saveConfig(adConfig);
-    setSaveMessage('Ad configuration saved! Page will reload to apply changes.');
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
+  const handleSaveAdConfig = async () => {
+    const success = await adService.saveConfig(adConfig);
+    if (success) {
+      setSaveMessage('Ad configuration saved! Page will reload to apply changes.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } else {
+      setSaveMessage('Failed to save ad configuration. Please try again.');
+    }
   };
 
   return (
