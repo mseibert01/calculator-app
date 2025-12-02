@@ -1,0 +1,15 @@
+{
+  "name": "financial-calculators",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:worker\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:worker": "cd functions && npm run dev",
+    "build": "cd frontend && npm run build",
+    "deploy:worker": "cd functions && npm run deploy"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

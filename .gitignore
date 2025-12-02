@@ -34,6 +34,7 @@ lerna-debug.log*
 # Cloudflare
 .wrangler/
 wrangler.toml.backup
+.dev.vars
 
 # OS
 Thumbs.db
